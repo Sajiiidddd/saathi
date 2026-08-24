@@ -1,0 +1,59 @@
+{
+  "_comment": "Emotion-tagged quote index. NOT retrieval content — loaded separately and used as an optional closing line after a technique, matched to the caller's emotional state. All quotes verbatim from the public-domain texts in data/classics/ (see each work's .md for translation and source URL). States must be from saathi.kb.emotion.STATES.",
+  "quotes": [
+    {
+      "text": "It is in thy power to retire into thyself, and to be at rest, and free from all businesses.",
+      "author": "Marcus Aurelius",
+      "work": "Meditations",
+      "states": ["overwhelmed", "stressed"]
+    },
+    {
+      "text": "Let not things future trouble thee. For if necessity so require that they come to pass, thou shalt be provided for them with the same reason, by which whatsoever is now present, is made both tolerable and acceptable unto thee.",
+      "author": "Marcus Aurelius",
+      "work": "Meditations",
+      "states": ["anxious", "ruminating"]
+    },
+    {
+      "text": "Men are disturbed not by things, but by the views which they take of things.",
+      "author": "Epictetus",
+      "work": "The Enchiridion",
+      "states": ["ruminating", "anxious", "stressed"]
+    },
+    {
+      "text": "There are things which are within our power, and there are things which are beyond our power.",
+      "author": "Epictetus",
+      "work": "The Enchiridion",
+      "states": ["overwhelmed", "anxious"]
+    },
+    {
+      "text": "Calmness of mind is one of the beautiful jewels of wisdom. It is the result of long and patient effort in self-control.",
+      "author": "James Allen",
+      "work": "As a Man Thinketh",
+      "states": ["stressed", "ruminating"]
+    },
+    {
+      "text": "All that we are is the result of what we have thought: it is founded on our thoughts, it is made up of our thoughts.",
+      "author": "The Dhammapada",
+      "work": "The Dhammapada (Müller translation)",
+      "states": ["ruminating", "low"]
+    },
+    {
+      "text": "The sovereign voluntary path to cheerfulness, if our spontaneous cheerfulness be lost, is to sit up cheerfully, to look round cheerfully, and to act and speak as if cheerfulness were already there.",
+      "author": "William James",
+      "work": "The Gospel of Relaxation",
+      "states": ["low"]
+    },
+    {
+      "text": "Unclamp, in a word, your intellectual and practical machinery, and let it run free; and the service it will do you will be twice as good.",
+      "author": "William James",
+      "work": "The Gospel of Relaxation",
+      "states": ["anxious", "overwhelmed", "stressed"]
+    },
+    {
+      "text": "Keeping an equal heart, with equal mind bears shame and glory; with an equal peace takes heat and cold, pleasure and pain.",
+      "author": "The Bhagavad-Gita",
+      "work": "The Song Celestial (Edwin Arnold translation)",
+      "states": ["stressed", "low", "ruminating"]
+    }
+  ]
+}

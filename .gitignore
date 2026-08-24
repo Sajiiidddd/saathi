@@ -1,0 +1,19 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+logs/
+certs/
+index/
+.fastembed_cache/
+.DS_Store
+
+# Build artifacts — regenerate, don't commit
+data/classics/*.txt
+data/open_pdfs/*.pdf
+index/
+*.faiss
+
+# Internal working notes and snapshots — never published
+private/

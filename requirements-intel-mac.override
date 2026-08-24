@@ -1,0 +1,9 @@
+# Intel-macOS-only dependency overrides (local dev on x86_64 Darwin).
+# The ML/crypto ecosystem stopped shipping x86_64 macOS wheels; these are the
+# newest versions that still have one. NOT for deployment — the Windows/Linux
+# install needs none of this. Runtime risk is real: pipecat wants onnxruntime
+# 1.24.x for its smart-turn model and numba 0.67.
+onnxruntime==1.23.2
+numba==0.62.1
+llvmlite==0.45.1
+cryptography==46.0.3

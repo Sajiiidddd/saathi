@@ -1,0 +1,47 @@
+{
+  "_comment": "Saathi crisis-handoff directory. VERIFY every number before launch day. Region selected by config; IN is default.",
+  "IN": [
+    {
+      "name": "Tele-MANAS (Govt of India, 24x7)",
+      "phone": "14416",
+      "alt": "1-800-891-4416"
+    },
+    {
+      "name": "AASRA (24x7)",
+      "phone": "+91-9820466726"
+    },
+    {
+      "name": "Vandrevala Foundation (24x7)",
+      "phone": "1860-2662-345"
+    },
+    {
+      "name": "iCall (TISS)",
+      "phone": "+91-9152987821"
+    }
+  ],
+  "GB": [
+    {
+      "name": "Samaritans (24x7)",
+      "phone": "116 123"
+    },
+    {
+      "name": "NHS urgent mental health",
+      "phone": "111, option 2"
+    },
+    {
+      "name": "Emergency",
+      "phone": "999"
+    }
+  ],
+  "US": [
+    {
+      "name": "988 Suicide & Crisis Lifeline (24x7)",
+      "phone": "988",
+      "web": "988lifeline.org"
+    },
+    {
+      "name": "Emergency",
+      "phone": "911"
+    }
+  ]
+}

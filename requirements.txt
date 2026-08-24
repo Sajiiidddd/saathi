@@ -1,0 +1,21 @@
+# Saathi — voice pipeline dependencies
+#
+# PLATFORM: installs as-is on Windows, Linux, and Apple Silicon.
+# Intel macOS (x86_64) additionally needs:
+#     uv pip install -r requirements.txt --override requirements-intel-mac.override
+# because onnxruntime/numba/llvmlite/cryptography no longer ship x86_64 mac
+# wheels. Verified working. See docs/PLATFORMS.md for the version table.
+#
+# Pinned deliberately. Pipecat released 1.0.0 in April 2026 and the API broke hard:
+# PipelineTask -> PipelineWorker, PipelineRunner -> WorkerRunner,
+# OpenAILLMContext -> LLMContext, and VAD moved off TransportParams onto the
+# user aggregator. All code here targets 1.7.0. Do not float this version
+# without re-reading the CHANGELOG.
+#
+# Extras:
+#   azure   -> azure-cognitiveservices-speech  (STT + TTS)
+#   google  -> google-genai                    (Gemini Flash LLM)
+#   silero  -> no-op extra; onnxruntime + silero_vad.onnx ship in core
+#   webrtc  -> aiortc + opencv-headless        (SmallWebRTCTransport)
+#   runner  -> fastapi, uvicorn, python-dotenv (our server.py needs these)
+pipecat-ai[azure,google,silero,webrtc,runner]==1.7.0

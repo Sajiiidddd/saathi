@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Saathi — voice wellbeing companion</title>
+<style>
+  :root {
+    --bg: #fbf7f2; --card: #fffdfb; --ink: #2b2724; --muted: #6f6862;
+    --accent: #7c6a58; --line: #e8ded2; --warn-bg: #fdf4f4;
+    --warn-line: #e6c9c5; --warn-ink: #8a3f38; --live: #3f7d5a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171513; --card: #201d1a; --ink: #ece7e1; --muted: #a49b92;
+      --accent: #c9b39a; --line: #332e29; --warn-bg: #2a1f1e;
+      --warn-line: #58403c; --warn-ink: #e8b4ad; --live: #7fc49e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2.5rem 1.25rem 4rem; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+    display: flex; justify-content: center;
+  }
+  main { width: 100%; max-width: 40rem; }
+  h1 { font-size: 1.9rem; margin: 0 0 .2rem; letter-spacing: -.02em; font-weight: 600; }
+  .sub { color: var(--muted); margin: 0 0 1.75rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 1.5rem; margin-bottom: 1.25rem;
+  }
+  .gate { background: var(--warn-bg); border-color: var(--warn-line); }
+  .gate h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em;
+             color: var(--warn-ink); margin: 0 0 .6rem; }
+  .gate p { margin: 0 0 .75rem; color: var(--warn-ink); font-size: .93rem; }
+  .gate ul { margin: 0; padding-left: 1.1rem; font-size: .93rem; color: var(--warn-ink); }
+  .gate li { margin-bottom: .2rem; }
+  .talk { display: flex; align-items: center; gap: 1.1rem; }
+  button {
+    font: inherit; font-weight: 550; padding: .8rem 1.5rem; border-radius: 999px;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--card);
+    cursor: pointer; transition: opacity .15s, transform .05s;
+  }
+  button:hover:not(:disabled) { opacity: .88; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.secondary { background: transparent; color: var(--accent); }
+  .status { color: var(--muted); font-size: .93rem; display: flex; align-items: center; gap: .55rem; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.live { background: var(--live); animation: pulse 1.8s ease-in-out infinite; }
+  .dot.error { background: var(--warn-ink); }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); }
+                     50% { opacity: .45; transform: scale(.82); } }
+  @media (prefers-reduced-motion: reduce) { .dot.live { animation: none; } }
+  h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em;
+       color: var(--muted); margin: 0 0 .7rem; font-weight: 600; }
+  .try li { margin-bottom: .35rem; font-size: .95rem; }
+  .try ul { margin: 0; padding-left: 1.15rem; }
+  code { background: var(--bg); padding: .1rem .35rem; border-radius: 4px;
+         font-size: .88em; border: 1px solid var(--line); }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Saathi</h1>
+  <p class="sub">A voice companion for everyday wellbeing — stress, sleep, motivation.</p>
+
+  <section class="card gate">
+    <h2>Please read first</h2>
+    <p>
+      This is a <strong>portfolio demonstration</strong>. It is <strong>not therapy,
+      not medical advice, and not for use in a crisis</strong>. Saathi does not
+      diagnose and cannot help in an emergency.
+    </p>
+    <p>If you need to talk to a person right now, please contact:</p>
+    <ul id="helplines"><li>Loading helplines…</li></ul>
+  </section>
+
+  <section class="card">
+    <div class="talk">
+      <button id="start">Start talking</button>
+      <button id="stop" class="secondary" disabled>End</button>
+      <span class="status"><span class="dot" id="dot"></span><span id="status">Not connected</span></span>
+    </div>
+  </section>
+
+  <section class="card try">
+    <h3>Things worth trying</h3>
+    <ul>
+      <li>“I haven't been sleeping well before exams.”</li>
+      <li><strong>Interrupt her mid-sentence</strong> — she should stop and listen.</li>
+      <li>“Do you think I have anxiety?” — she should decline to diagnose.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Audio is never recorded. Transcripts and timing are logged locally for
+    engineering analysis only.
+  </footer>
+  <audio id="bot-audio" autoplay></audio>
+</main>
+
+<script>
+const els = {
+  start: document.getElementById('start'),
+  stop: document.getElementById('stop'),
+  status: document.getElementById('status'),
+  dot: document.getElementById('dot'),
+  audio: document.getElementById('bot-audio'),
+  helplines: document.getElementById('helplines'),
+};
+
+let pc = null, micStream = null, pcId = null, pendingCandidates = [];
+
+function setStatus(text, state) {
+  els.status.textContent = text;
+  els.dot.className = 'dot' + (state ? ' ' + state : '');
+}
+
+// Helplines come from the server so the page and Saathi's spoken handoff can
+// never drift apart.
+fetch('/api/helplines')
+  .then(r => r.json())
+  .then(({ helplines }) => {
+    els.helplines.innerHTML = helplines.map(h => {
+      const extra = [h.alt && `alt ${h.alt}`, h.web].filter(Boolean).join(' · ');
+      return `<li><strong>${h.name}</strong> — ${h.phone}${extra ? ' (' + extra + ')' : ''}</li>`;
+    }).join('');
+  })
+  .catch(() => { els.helplines.innerHTML = '<li>Could not load helplines — check the server log.</li>'; });
+
+async function flushCandidates() {
+  if (!pcId || pendingCandidates.length === 0) return;
+  const candidates = pendingCandidates.splice(0);
+  try {
+    await fetch('/api/offer', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pc_id: pcId, candidates }),
+    });
+  } catch (err) { console.warn('ICE patch failed', err); }
+}
+
+async function start() {
+  els.start.disabled = true;
+  setStatus('Asking for your microphone…');
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+  } catch (err) {
+    setStatus('Microphone permission denied', 'error');
+    els.start.disabled = false;
+    return;
+  }
+
+  setStatus('Connecting…');
+  pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+
+  // sendrecv, not sendonly: SmallWebRTCTransport expects a bidirectional
+  // audio transceiver so it has somewhere to put Saathi's voice.
+  micStream.getTracks().forEach(track => pc.addTransceiver(track, { direction: 'sendrecv' }));
+
+  pc.ontrack = event => { els.audio.srcObject = event.streams[0]; };
+
+  pc.onicecandidate = event => {
+    if (!event.candidate) return;
+    pendingCandidates.push({
+      candidate: event.candidate.candidate,
+      sdp_mid: event.candidate.sdpMid,
+      sdp_mline_index: event.candidate.sdpMLineIndex,
+    });
+    flushCandidates();
+  };
+
+  pc.onconnectionstatechange = () => {
+    const state = pc.connectionState;
+    if (state === 'connected') { setStatus('Connected — say hello', 'live'); els.stop.disabled = false; }
+    else if (state === 'connecting') setStatus('Connecting…');
+    else if (state === 'failed') { setStatus('Connection failed', 'error'); stop(); }
+    else if (state === 'disconnected' || state === 'closed') setStatus('Not connected');
+  };
+
+  try {
+    await pc.setLocalDescription(await pc.createOffer());
+    const response = await fetch('/api/offer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type }),
+    });
+    if (!response.ok) throw new Error(`server returned ${response.status}`);
+    const answer = await response.json();
+    pcId = answer.pc_id;
+    await pc.setRemoteDescription(answer);
+    await flushCandidates();
+  } catch (err) {
+    console.error(err);
+    setStatus('Could not reach Saathi — is the server running?', 'error');
+    stop();
+  }
+}
+
+function stop() {
+  if (pc) { pc.close(); pc = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  pcId = null; pendingCandidates = [];
+  els.audio.srcObject = null;
+  els.start.disabled = false;
+  els.stop.disabled = true;
+  setStatus('Not connected');
+}
+
+els.start.addEventListener('click', start);
+els.stop.addEventListener('click', stop);
+window.addEventListener('beforeunload', stop);
+</script>
+</body>
+</html>
