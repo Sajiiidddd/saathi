@@ -315,14 +315,16 @@ function showLock(status, detail) {
   }
   input.disabled = false; go.disabled = false;
   const hadPassword = !!localStorage.getItem(TOKEN_KEY);
+  // Forget a rejected password immediately: the 5s auto-poll would otherwise
+  // re-submit it and burn a strike every poll — self-inflicted lockout.
+  if (hadPassword) localStorage.removeItem(TOKEN_KEY);
   const left = detail && detail.attempts_left;
   if (hadPassword && left != null && left < 5) {
     msg.textContent = ROASTS[Math.min(4 - left, ROASTS.length - 1)] +
       ' (' + left + (left === 1 ? ' try' : ' tries') + ' left)';
     msg.hidden = false;
-  } else {
-    msg.hidden = true;
   }
+  // no password sent (bare poll): leave whatever message is showing
 }
 
 /* ---- release visibility: what's running vs the latest tag on GitHub ---- */
