@@ -209,6 +209,10 @@
                        align-items: baseline; padding: 10px 14px; }
   .srcpanel .rowline b { font-size: 14px; color: var(--ink); }
   .srcpanel .rowline span { font-size: 12px; color: var(--ink-3); text-align: right; }
+  .surface a.maker { color: var(--ink); font-weight: 700; text-decoration: underline;
+                     text-underline-offset: 3px; text-decoration-color: var(--line-2);
+                     transition: text-decoration-color .2s ease; }
+  .surface a.maker:hover { text-decoration-color: var(--ink); opacity: 1; }
 
   /* ---- modals (helplines, mic, close) ------------------------------------ */
   .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
@@ -404,6 +408,7 @@
     <div class="hdr-right">
       <button class="pill glass ember-hover" id="need-person">Need a person?</button>
       <button class="pill glass cc-pill" id="cc" aria-pressed="false" title="Live captions">cc</button>
+      <button class="pill glass" id="appearance-pill"></button>
       <button class="pill bare" id="open-settings">settings</button>
     </div>
   </header>
@@ -497,6 +502,10 @@
       <div>
         <div class="label"><span style="color:var(--ink-3);">04</span>&nbsp; <span id="about-s4-label"></span></div>
         <p id="about-s4" style="margin-top:8px; font-size:15px; line-height:1.62; color:var(--muted); text-wrap:pretty;"></p>
+      </div>
+      <div>
+        <div class="label"><span style="color:var(--ink-3);">05</span>&nbsp; <span id="about-s5-label"></span></div>
+        <p id="about-s5" style="margin-top:8px; font-size:15px; line-height:1.62; color:var(--muted); text-wrap:pretty;"></p>
       </div>
     </div>
     <div style="display:flex; flex-direction:column; gap:18px; margin-top:38px; padding-top:26px; border-top:1px solid var(--line);">
@@ -684,6 +693,8 @@ const COPY = {
     aboutS3:'If nothing relevant is found, the answer is an honest “I don’t have good guidance on that.” She only speaks from passages actually retrieved — no uncited claims.',
     aboutS4Label:'[ privacy ]',
     aboutS4:'Audio is never recorded. Transcripts and timing stay on this device, for engineering quality only.',
+    aboutS5Label:'[ who built this ]',
+    aboutS5:'Saathi is designed and built by <a class="maker" href="https://sajidtamboli.dev" target="_blank" rel="noopener">Sajid Tamboli</a> — an engineer drawn to systems that keep their promises: real-time voice, answers that cite their sources, and safety as a code path rather than a hope. This project is his study of what a trustworthy voice companion should feel like.',
     aboutAttribution:'A portfolio demonstration — not therapy, not medical advice, not for crisis use. Contains public sector information licensed under the Open Government Licence v3.0 (NHS). WHO and NOBA content used under CC BY-NC-SA, non-commercial. US federal publications are public domain. Classic texts are public domain, via Project Gutenberg.',
     aboutClose:'Back',
     helpTitle:'People who can help — free, 24×7',
@@ -729,6 +740,8 @@ const COPY = {
     aboutS3:'Agar kuch relevant nahi milta, to jawab seedha hota hai — “iske baare me mere paas achhi guidance nahi hai.” Wo sirf un passages se bolti hain jo retriever ne wakai laaye. Bina citation koi daawa nahi.',
     aboutS4Label:'[ privacy ]',
     aboutS4:'Audio kabhi record nahi hota. Transcript aur timing isi device par rehte hain, sirf engineering quality ke liye.',
+    aboutS5Label:'[ isse kisne banaya ]',
+    aboutS5:'Saathi ko design aur build kiya hai <a class="maker" href="https://sajidtamboli.dev" target="_blank" rel="noopener">Sajid Tamboli</a> ne — ek engineer jise aise systems pasand hain jo apne vaade nibhaate hain: real-time voice, jawab jo apna source batate hain, aur safety code me, sirf umeed me nahi. Yeh project unki khoj hai — ek bharosemand voice companion kaisa mehsoos hona chahiye.',
     aboutAttribution:'Ek portfolio demonstration — therapy nahi, medical advice nahi, crisis ke liye nahi. Contains public sector information licensed under the Open Government Licence v3.0 (NHS). WHO aur NOBA content CC BY-NC-SA ke tehat, non-commercial. US federal publications public domain hain. Classic texts public domain, Project Gutenberg se.',
     aboutClose:'Wapas',
     helpTitle:'Jo log madad kar sakte hain — abhi, free, 24×7',
@@ -774,6 +787,8 @@ const COPY = {
     aboutS3:'अगर कुछ relevant नहीं मिलता, तो जवाब सीधा होता है — “इसके बारे में मेरे पास अच्छी guidance नहीं है.” वो सिर्फ़ उन passages से बोलती हैं जो retriever ने वाकई लाए. No uncited claims.',
     aboutS4Label:'[ privacy · निजता ]',
     aboutS4:'Audio कभी record नहीं होता. Transcript और timing इसी device पर रहते हैं, सिर्फ़ engineering quality के लिए.',
+    aboutS5Label:'[ इसे किसने बनाया · who built this ]',
+    aboutS5:'Saathi को design और build किया है <a class="maker" href="https://sajidtamboli.dev" target="_blank" rel="noopener">Sajid Tamboli</a> ने — एक engineer जिन्हें ऐसे systems पसंद हैं जो अपने वादे निभाते हैं: real-time voice, जवाब जो अपना source बताते हैं, और safety code में — सिर्फ़ उम्मीद में नहीं. यह project उनकी खोज है — एक भरोसेमंद voice companion कैसा महसूस होना चाहिए.',
     aboutAttribution:'एक portfolio demonstration — therapy नहीं, medical advice नहीं, crisis के लिए नहीं. Contains public sector information licensed under the Open Government Licence v3.0 (NHS). WHO and NOBA content used under CC BY-NC-SA, non-commercial. US federal publications are public domain. Classic texts are public domain, via Project Gutenberg.',
     aboutClose:'वापस · Back',
     helpTitle:'जो लोग मदद कर सकते हैं — अभी, free, 24×7',
@@ -838,6 +853,10 @@ function applyThemeAttr(fade) {
   const target = frozenTheme || (themePref === 'auto' ? null : themePref);
   if (target) html.setAttribute('data-theme', target);
   else html.removeAttribute('data-theme');
+  // The tab icon follows the room — explicit variants, because a media-query
+  // SVG can only see the OS theme, not the in-app Appearance choice.
+  const fav = document.querySelector('link[rel="icon"][type="image/svg+xml"]');
+  if (fav) fav.href = '/brand/favicon-' + (resolvedTheme() === 'day' ? 'day' : 'night') + '.svg';
 }
 function setThemePref(pref) {
   themePref = pref;
@@ -862,7 +881,17 @@ function renderAppearance() {
   $('appearance-note').hidden = themePref !== 'auto';
   $('theme-queued-note').textContent = c.themeQueuedNote;
   $('theme-queued-note').hidden = !themeQueued;
+  // header pill mirrors the current choice; tapping it cycles auto → day → night
+  const pill = $('appearance-pill');
+  pill.textContent = themePref === 'day' ? c.themeDay
+                   : themePref === 'night' ? c.themeNight : c.themeAuto;
+  pill.setAttribute('aria-label',
+    c.setAppearance.replace(/[\[\]]/g, '').trim() + ' — ' + pill.textContent);
 }
+$('appearance-pill').onclick = () => {
+  const order = ['auto', 'day', 'night'];
+  setThemePref(order[(order.indexOf(themePref) + 1) % order.length]);
+};
 lightMQ.addEventListener('change', () => {
   if (frozenTheme) { themeQueued = true; renderAppearance(); }
   else applyThemeAttr(true);
@@ -1124,6 +1153,8 @@ function applyCopy() {
   $('about-excluded').textContent = c.aboutExcluded;
   $('about-s3-label').textContent = c.aboutS3Label; $('about-s3').textContent = c.aboutS3;
   $('about-s4-label').textContent = c.aboutS4Label; $('about-s4').textContent = c.aboutS4;
+  $('about-s5-label').textContent = c.aboutS5Label;
+  $('about-s5').innerHTML = c.aboutS5;   // carries the maker link — our own copy, not user data
   $('about-attribution').textContent = c.aboutAttribution;
   $('about-close').textContent = c.aboutClose;
   $('about-sources').innerHTML = SOURCES.map(([n, l]) =>

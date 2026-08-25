@@ -20,8 +20,13 @@ from pathlib import Path
 # put src/ on the path. Keeps `python server.py` working from a clean checkout.
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
+import hmac  # noqa: E402
+import re  # noqa: E402
+import subprocess  # noqa: E402
+import time  # noqa: E402
+
 import uvicorn  # noqa: E402
-from fastapi import BackgroundTasks, FastAPI  # noqa: E402
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse  # noqa: E402
 from loguru import logger  # noqa: E402
 from pipecat.transports.smallwebrtc.connection import IceServer  # noqa: E402
@@ -55,6 +60,69 @@ import os as _os  # noqa: E402
 _ice = [IceServer(urls=u) for u in
         (_os.getenv("SAATHI_ICE_SERVERS") or "").replace(" ", "").split(",") if u]
 app.state.webrtc = SmallWebRTCRequestHandler(ice_servers=_ice or None)
+
+
+def _git(*args: str) -> str:
+    try:
+        out = subprocess.run(
+            ["git", *args], cwd=Path(__file__).resolve().parent,
+            capture_output=True, text=True, timeout=5,
+        )
+        return out.stdout.strip() if out.returncode == 0 else ""
+    except Exception:  # noqa: BLE001 — version display must never block boot
+        return ""
+
+
+# Which release is actually serving. Deploys check out tags, so a healthy
+# production box reports e.g. "v0.2.1"; a working tree reports "dev".
+app.state.version = _git("describe", "--tags", "--always", "--dirty") or "dev"
+_remote_match = re.search(r"github\.com[:/]+([^/]+/[^/.]+)",
+                          _git("config", "--get", "remote.origin.url"))
+app.state.repo = _remote_match.group(1) if _remote_match else None
+
+
+_DASH_FAILS: dict[str, list] = {}  # ip -> [wrong_attempts, locked_until_ts]
+_DASH_MAX_TRIES = 5
+_DASH_LOCK_SECS = 300  # the UI sentences you to 12,314,281 years; we serve five minutes
+
+
+def _dashboard_guard(request: Request) -> None:
+    """Admin gate for the dashboard's data endpoints.
+
+    SAATHI_DASHBOARD_TOKEN unset = open (local development). Set it in the
+    deployment's .env and the dashboard demands it as a password. Five wrong
+    passwords lock that IP out for five minutes — real brute-force pacing,
+    however the front-end chooses to dramatise it. The talk page's own
+    endpoints stay open — callers are anonymous.
+    """
+    expected = (_os.getenv("SAATHI_DASHBOARD_TOKEN") or "").strip()
+    if not expected:
+        return
+    # Behind Caddy every connection is 127.0.0.1; Caddy appends the real
+    # client to X-Forwarded-For, so the LAST entry is the trustworthy one.
+    forwarded = request.headers.get("x-forwarded-for", "")
+    ip = (forwarded.split(",")[-1].strip() if forwarded
+          else (request.client.host if request.client else "?"))
+    fails, locked_until = _DASH_FAILS.get(ip, [0, 0.0])
+    now = time.time()
+    if now < locked_until:
+        raise HTTPException(status_code=429,
+                            detail={"locked_for": int(locked_until - now)})
+    supplied = request.headers.get("authorization", "")
+    if supplied.lower().startswith("bearer "):
+        supplied = supplied[7:]
+    if supplied and hmac.compare_digest(supplied.encode(), expected.encode()):
+        _DASH_FAILS.pop(ip, None)
+        return
+    if supplied:  # an actual wrong password burns a try; a bare page load doesn't
+        fails += 1
+        if fails >= _DASH_MAX_TRIES:
+            _DASH_FAILS[ip] = [0, now + _DASH_LOCK_SECS]
+            raise HTTPException(status_code=429,
+                                detail={"locked_for": _DASH_LOCK_SECS})
+        _DASH_FAILS[ip] = [fails, 0.0]
+    raise HTTPException(status_code=401,
+                        detail={"attempts_left": _DASH_MAX_TRIES - fails})
 
 
 @app.post("/api/offer")
@@ -139,8 +207,8 @@ async def latest_session():
 
 
 @app.get("/api/sessions/{session_id}")
-async def session_detail(session_id: str):
-    """One session's full record — the dashboard's drill-down."""
+async def session_detail(session_id: str, _: None = Depends(_dashboard_guard)):
+    """One session's full record — the dashboard's drill-down. Admin-gated."""
     store = app.state.store
     rows = store.query(
         "SELECT id, started_at, ended_at, language FROM sessions WHERE id = ?",
@@ -151,11 +219,12 @@ async def session_detail(session_id: str):
 
 
 @app.get("/api/metrics")
-async def metrics(range: str = "all"):
-    """Aggregates for the dashboard. Small data — aggregation in Python keeps
-    the SQL portable between SQLite and Postgres. `range` (today | week | all)
-    windows everything except the eval block, which always reflects the
-    latest harness run — a deploy gate, not a time series."""
+async def metrics(range: str = "all", _: None = Depends(_dashboard_guard)):
+    """Aggregates for the dashboard (admin-gated). Small data — aggregation in
+    Python keeps the SQL portable between SQLite and Postgres. `range`
+    (today | week | all) windows everything except the eval block, which
+    always reflects the latest harness run — a deploy gate, not a time
+    series."""
     import statistics
     import time as _t
 
@@ -270,6 +339,7 @@ async def metrics(range: str = "all"):
 
     day_ago = _t.time() - 86400
     return {
+        "version": {"running": app.state.version, "repo": app.state.repo},
         "window": {"range": range if range in ("today", "week") else "all",
                    "sessions": len(sessions), "turns": spec_total},
         "tiles": {

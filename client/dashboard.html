@@ -162,6 +162,22 @@
   .drill-turn .srcs { color: var(--muted); font-size: .78rem; margin-top: .25rem; }
   .empty { color: var(--dim); font-size: .85rem; }
   .miss { color: var(--muted); font-size: .82rem; line-height: 1.5; }
+
+  /* admin lock — shown when the server demands a dashboard token */
+  .lock { position: fixed; inset: 0; background: var(--bg); z-index: 90;
+          display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .lock-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+               padding: 1.6rem; max-width: 22rem; width: 100%;
+               display: flex; flex-direction: column; gap: .8rem; }
+  .lock-card p { color: var(--muted); font-size: .9rem; }
+  .lock-card input { font: inherit; color: var(--ink); background: var(--bg-2);
+    border: 1px solid var(--line-2); border-radius: 8px; padding: .6rem .8rem; }
+  .lock-card button { font: inherit; font-weight: 700; background: var(--accent);
+    color: var(--accent-ink); border: 0; border-radius: 999px; padding: .6rem 1.2rem;
+    cursor: pointer; min-height: 44px; }
+  .lock-err { color: var(--ember); font-size: .82rem; }
+  .ver-ok { color: var(--accent); font-weight: 700; }
+  .ver-drift { color: var(--gold); font-weight: 700; }
   .foot { color: var(--dim); font-size: .78rem; margin-top: 1rem; max-width: 44rem;
           line-height: 1.6; }
 </style>
@@ -220,6 +236,17 @@ offline eval harness; audio is never recorded.</p>
 <p class="foot" id="updated"></p>
 </div>
 
+<div class="lock" id="lock" hidden>
+  <div class="lock-card">
+    <span class="kicker">admin access</span>
+    <p id="lock-prompt">Type the password.</p>
+    <input id="lock-token" type="password" placeholder="password"
+           autocomplete="current-password" />
+    <button id="lock-go">unlock</button>
+    <p class="lock-err" id="lock-msg" hidden></p>
+  </div>
+</div>
+
 <script>
 'use strict';
 const $ = (id) => document.getElementById(id);
@@ -227,12 +254,91 @@ const $ = (id) => document.getElementById(id);
 // Honor the talk page's appearance preference (auto follows the OS).
 {
   const pref = localStorage.getItem('saathi-theme') || 'auto';
+  const day = pref === 'day' ||
+    (pref !== 'night' && matchMedia('(prefers-color-scheme: light)').matches);
   if (pref === 'day' || pref === 'night') document.documentElement.setAttribute('data-theme', pref);
-  else if (matchMedia('(prefers-color-scheme: light)').matches)
-    document.documentElement.classList.add('day-auto');
+  else if (day) document.documentElement.classList.add('day-auto');
+  const fav = document.querySelector('link[rel="icon"][type="image/svg+xml"]');
+  if (fav) fav.href = '/brand/favicon-' + (day ? 'day' : 'night') + '.svg';
 }
 
-const state = { range: 'all', expanded: null, drillCache: {} };
+const state = { range: 'all', expanded: null, drillCache: {}, tagNote: '' };
+
+/* ---- admin token: sent as a Bearer header on every data fetch ---------- */
+const TOKEN_KEY = 'saathi-dash-token';
+function authHeaders() {
+  const t = localStorage.getItem(TOKEN_KEY);
+  return t ? { 'Authorization': 'Bearer ' + t } : {};
+}
+async function fetchJSON(url) {
+  const r = await fetch(url, { headers: authHeaders() });
+  if (r.status === 401 || r.status === 429) {
+    let detail = null;
+    try { detail = (await r.json()).detail; } catch (e) {}
+    showLock(r.status, detail);
+    throw new Error('auth');
+  }
+  return r.json();
+}
+
+/* Wrong passwords earn commentary. Five of them earn a geological sentence
+   (the backend, being merciful, serves five minutes). */
+const ROASTS = [
+  'Nope. Not it.',
+  'Wrong again. She forgives; the dashboard doesn’t.',
+  'Third miss. The safety gate runs at 100% recall — you, notably, do not.',
+  'Four down, one left. Breathe in for 4, hold for 7, out for 8… now think.',
+];
+let lockTimer = null;
+function showLock(status, detail) {
+  $('lock').hidden = false;
+  const msg = $('lock-msg'), input = $('lock-token'), go = $('lock-go');
+  clearInterval(lockTimer);
+  if (status === 429) {
+    let left = (detail && detail.locked_for) || 300;
+    input.disabled = true; go.disabled = true;
+    const tick = () => {
+      const m = Math.floor(left / 60), s = String(left % 60).padStart(2, '0');
+      msg.innerHTML = 'That’s five. You are locked out for <b>12,314,281 years</b>.' +
+        '<br><span style="color:var(--dim)">(the backend negotiated it down to ' +
+        m + ':' + s + ')</span>';
+      msg.hidden = false;
+      if (left-- <= 0) {
+        clearInterval(lockTimer);
+        input.disabled = false; go.disabled = false;
+        msg.textContent = 'Sentence served. Try again — carefully.';
+      }
+    };
+    tick();
+    lockTimer = setInterval(tick, 1000);
+    return;
+  }
+  input.disabled = false; go.disabled = false;
+  const hadPassword = !!localStorage.getItem(TOKEN_KEY);
+  const left = detail && detail.attempts_left;
+  if (hadPassword && left != null && left < 5) {
+    msg.textContent = ROASTS[Math.min(4 - left, ROASTS.length - 1)] +
+      ' (' + left + (left === 1 ? ' try' : ' tries') + ' left)';
+    msg.hidden = false;
+  } else {
+    msg.hidden = true;
+  }
+}
+
+/* ---- release visibility: what's running vs the latest tag on GitHub ---- */
+let tagChecked = false;
+async function checkLatestTag(v) {
+  if (tagChecked || !v || !v.repo) return;
+  tagChecked = true;
+  try {
+    const tags = await (await fetch('https://api.github.com/repos/' + v.repo + '/tags?per_page=1')).json();
+    const latest = tags && tags[0] && tags[0].name;
+    if (!latest) return;
+    state.tagNote = latest === v.running
+      ? ' · GitHub ' + esc(latest) + ' <span class="ver-ok">✓ in sync</span>'
+      : ' · GitHub ' + esc(latest) + ' <span class="ver-drift">→ deploy pending</span>';
+  } catch (e) { /* offline or rate-limited — the running version still shows */ }
+}
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -505,7 +611,7 @@ async function toggleDrill(sid) {
   renderSessions(state.metrics);
   if (!state.drillCache[sid]) {
     try {
-      const data = await (await fetch('/api/sessions/' + encodeURIComponent(sid))).json();
+      const data = await fetchJSON('/api/sessions/' + encodeURIComponent(sid));
       state.drillCache[sid] = drillHtml(data);
     } catch (e) {
       state.drillCache[sid] = '<p class="empty">Could not load this session.</p>';
@@ -516,12 +622,15 @@ async function toggleDrill(sid) {
 
 async function refresh() {
   let d;
-  try { d = await (await fetch('/api/metrics?range=' + state.range)).json(); }
+  try { d = await fetchJSON('/api/metrics?range=' + state.range); }
   catch (e) { return; }
+  $('lock').hidden = true;
   state.metrics = d;
-  const w = d.window || {};
-  $('window-note').textContent = 'local session store · audio never recorded · ' +
-    w.sessions + (w.sessions === 1 ? ' session · ' : ' sessions · ') + w.turns + ' turns';
+  const w = d.window || {}, v = d.version || {};
+  checkLatestTag(v);
+  $('window-note').innerHTML = 'audio never recorded · ' +
+    w.sessions + (w.sessions === 1 ? ' session · ' : ' sessions · ') + w.turns +
+    ' turns · running <b>' + esc(v.running || 'dev') + '</b>' + state.tagNote;
   renderTiles(d); renderLatency(d); renderSafety(d); renderRetrieval(d);
   renderShape(d); renderChecklist(d); renderSessions(d);
   $('updated').textContent = 'auto-refreshes every 5s · updated ' + new Date().toLocaleTimeString();
@@ -535,6 +644,17 @@ for (const btn of document.querySelectorAll('#ranges button')) {
     refresh();
   });
 }
+
+$('lock-go').addEventListener('click', () => {
+  const t = $('lock-token').value.trim();
+  if (!t) return;
+  localStorage.setItem(TOKEN_KEY, t);
+  $('lock-token').value = '';
+  refresh();   // success hides the lock; failure comes back through showLock with commentary
+});
+$('lock-token').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') $('lock-go').click();
+});
 
 refresh();
 setInterval(refresh, 5000);

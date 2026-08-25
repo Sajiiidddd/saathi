@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs><clipPath id="disc"><circle cx="32" cy="32" r="29"/></clipPath></defs>
+  <circle cx="32" cy="32" r="30" fill="#1F2227"/>
+  <g clip-path="url(#disc)" fill="none" stroke-linecap="round">
+    <path d="M -6 28 C 8 20, 20 34, 32 28 S 52 20, 70 28" stroke="#9FE0C7" stroke-width="10"/>
+    <path d="M -6 40 C 10 48, 24 34, 38 40 S 58 48, 70 39" stroke="#E8C97A" stroke-width="9"/>
+  </g>
+  <circle cx="32" cy="32" r="29.5" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+</svg>
