@@ -240,9 +240,11 @@ offline eval harness; audio is never recorded.</p>
   <div class="lock-card">
     <span class="kicker">admin access</span>
     <p id="lock-prompt">Type the password.</p>
-    <input id="lock-token" type="password" placeholder="password"
-           autocomplete="current-password" />
-    <button id="lock-go">unlock</button>
+    <form id="lock-form" style="display:flex; flex-direction:column; gap:.8rem;">
+      <input id="lock-token" type="password" placeholder="password"
+             autocomplete="current-password" />
+      <button id="lock-go" type="submit">unlock</button>
+    </form>
     <p class="lock-err" id="lock-msg" hidden></p>
   </div>
 </div>
@@ -271,14 +273,28 @@ function authHeaders() {
   return t ? { 'Authorization': 'Bearer ' + t } : {};
 }
 async function fetchJSON(url) {
-  const r = await fetch(url, { headers: authHeaders() });
+  let r;
+  try { r = await fetch(url, { headers: authHeaders() }); }
+  catch (e) { netNote('can’t reach the server — retrying…'); throw e; }
   if (r.status === 401 || r.status === 429) {
     let detail = null;
     try { detail = (await r.json()).detail; } catch (e) {}
     showLock(r.status, detail);
     throw new Error('auth');
   }
+  if (!r.ok) {
+    // 502 = Caddy talking while the service restarts (every deploy has a
+    // few seconds of this). Say so instead of failing silently.
+    netNote('server is restarting (' + r.status + ') — retrying…');
+    throw new Error('http ' + r.status);
+  }
   return r.json();
+}
+function netNote(text) {
+  if (!$('lock').hidden) {
+    const m = $('lock-msg'); m.textContent = text; m.hidden = false;
+  }
+  $('updated').textContent = text;
 }
 
 /* Wrong passwords earn commentary. Five of them earn a geological sentence
@@ -647,15 +663,14 @@ for (const btn of document.querySelectorAll('#ranges button')) {
   });
 }
 
-$('lock-go').addEventListener('click', () => {
+$('lock-form').addEventListener('submit', (e) => {
+  e.preventDefault();
   const t = $('lock-token').value.trim();
   if (!t) return;
   localStorage.setItem(TOKEN_KEY, t);
   $('lock-token').value = '';
-  refresh();   // success hides the lock; failure comes back through showLock with commentary
-});
-$('lock-token').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') $('lock-go').click();
+  const m = $('lock-msg'); m.textContent = 'checking…'; m.hidden = false;
+  refresh();   // success hides the lock; a wrong password comes back roasted
 });
 
 refresh();
