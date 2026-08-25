@@ -20,5 +20,8 @@
 #   runner  -> fastapi, uvicorn, python-dotenv (our server.py needs these)
 pipecat-ai[azure,google,silero,webrtc,runner]==1.7.0
 
+# Retrieval: local ONNX embeddings (bge-small) for the knowledge base.
+fastembed==0.8.0
+
 # Session store: SQLite by default; set SAATHI_DATABASE_URL for Postgres.
 psycopg[binary]>=3.2,<4
