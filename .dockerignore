@@ -1,0 +1,12 @@
+.venv
+.git
+.env
+logs
+certs
+private
+index
+.fastembed_cache
+__pycache__
+**/__pycache__
+.DS_Store
+saathi.zip

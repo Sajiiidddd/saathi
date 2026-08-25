@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Saathi — dashboard</title>
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" sizes="32x32">
+<meta name="theme-color" content="#0E0F12" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F4F2" media="(prefers-color-scheme: light)">
+<style>
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 400; font-display: swap;
+    src: url('/fonts/HankenGrotesk-400-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 500; font-display: swap;
+    src: url('/fonts/HankenGrotesk-500-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 700; font-display: swap;
+    src: url('/fonts/HankenGrotesk-700-latin.woff2') format('woff2'); }
+  :root {
+    --bg: #0E0F12; --bg-2: #15171B; --card: #17191D; --card-2: #1F2227;
+    --ink: #F7F7F5; --muted: rgba(247,247,245,.66); --dim: #7A7D84;
+    --glass: rgba(255,255,255,.055); --line: rgba(255,255,255,.08);
+    --line-2: rgba(255,255,255,.17);
+    --accent: #9FE0C7; --accent-ink: #0D2A21; --ember: #F2887A;
+    --gold: #E8C97A; --iris: #8FA0D8;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --ease: cubic-bezier(.22,1,.36,1);
+  }
+  :root[data-theme="day"], :root.day-auto {
+    --bg: #F4F4F2; --bg-2: #EAEAE7; --card: #FFFFFF; --card-2: #F5F5F3;
+    --ink: #14161A; --muted: rgba(20,22,26,.72); --dim: #65686F;
+    --glass: rgba(20,22,26,.05); --line: #E2E2DE;
+    --line-2: #CACAC5;
+    --accent: #14161A; --accent-ink: #F7F7F5; --ember: #C2544A;
+    --gold: #A8802A; --iris: #5A6BB0;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink); min-height: 100vh;
+    font: 15px/1.55 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 1.4rem clamp(1rem, 4vw, 2.5rem) 4rem;
+  }
+  .wrap { max-width: 74rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+  header { display: flex; align-items: flex-end; justify-content: space-between;
+           gap: 1rem; flex-wrap: wrap; margin-bottom: .4rem; }
+  .wordmark { font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; }
+  .wordmark small { font-weight: 400; color: var(--dim); margin-left: .5rem; }
+  .window-note { font-size: .82rem; color: var(--dim); margin-top: .15rem; }
+  .header-right { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+  .ranges { display: flex; gap: .15rem; border: 1px solid var(--line-2);
+            border-radius: 999px; padding: .2rem; }
+  .ranges button { font: inherit; font-size: .8rem; font-weight: 700; border: 0;
+                   border-radius: 999px; padding: .4rem .95rem; cursor: pointer;
+                   background: transparent; color: var(--dim);
+                   transition: background .2s ease, color .2s ease; min-height: 2rem; }
+  .ranges button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  header a.back { color: var(--muted); text-decoration: none; font-size: .85rem;
+                  border: 1px solid var(--line-2); border-radius: 999px; padding: .45rem 1rem; }
+  header a.back:hover { color: var(--ink); border-color: var(--ink); }
+  /* bracketed mono micro-label — [ like this ], never uppercase */
+  .kicker { font-family: var(--mono); font-size: 11.5px; font-weight: 500;
+            letter-spacing: .01em; text-transform: none; color: var(--dim);
+            white-space: nowrap; }
+  .kicker::before { content: '[ '; }
+  .kicker::after { content: ' ]'; }
+
+  .tiles { display: grid; gap: .8rem;
+           grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+          padding: 1rem 1.1rem; animation: fadeIn .4s ease; }
+  .tile b { display: flex; align-items: baseline; gap: .35rem; font-size: 1.6rem;
+            font-weight: 700; letter-spacing: -.02em; margin-top: .3rem;
+            font-variant-numeric: tabular-nums; }
+  .tile b small { font-size: .8rem; font-weight: 400; color: var(--dim); }
+  .tile .note { color: var(--dim); font-size: .76rem; margin-top: .1rem; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); }
+                      to { opacity: 1; transform: none; } }
+
+  .grid { display: grid; gap: .9rem; grid-template-columns: repeat(12, 1fr); }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+           padding: 1.15rem 1.25rem; grid-column: span 12; min-width: 0; }
+  @media (min-width: 940px) {
+    .panel.half { grid-column: span 6; }
+    .panel.third { grid-column: span 4; }
+  }
+  .panel h2 { font-size: .95rem; font-weight: 700; margin-bottom: .9rem;
+              display: flex; justify-content: space-between; align-items: baseline;
+              gap: .8rem; flex-wrap: wrap; }
+  .panel h2 .aside { font-size: .78rem; font-weight: 400; color: var(--dim); }
+  .panel h2 .aside.warn { color: var(--gold); font-weight: 700; }
+  .panel .footnote { color: var(--dim); font-size: .8rem; line-height: 1.6;
+                     border-top: 1px solid var(--line); padding-top: .8rem; margin-top: .9rem; }
+
+  .comp-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden;
+              gap: 1px; margin-bottom: .4rem; }
+  .comp-bar i { min-width: 3px; transition: width .5s var(--ease); }
+  .comp-scale { display: flex; justify-content: space-between; font-size: .74rem;
+                color: var(--dim); margin-bottom: .9rem; font-variant-numeric: tabular-nums; }
+  .stage-row { display: flex; align-items: center; gap: .7rem; margin-bottom: .55rem;
+               font-size: .85rem; }
+  .stage-row .dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .stage-row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+                     white-space: nowrap; }
+  .stage-row .p50 { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stage-row .p95 { color: var(--dim); font-size: .76rem; width: 5.2rem;
+                    text-align: right; font-variant-numeric: tabular-nums; }
+
+  .bar-row { display: grid; grid-template-columns: 8.5rem 1fr 3.4rem; gap: .7rem;
+             align-items: center; margin-bottom: .55rem; font-size: .85rem; }
+  .bar-row .label { color: var(--muted); text-transform: capitalize; white-space: nowrap;
+                    overflow: hidden; text-overflow: ellipsis; }
+  .bar { height: 6px; border-radius: 3px; background: var(--card-2); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent);
+           transition: width .5s var(--ease); }
+  .bar i.gold { background: var(--gold); } .bar i.dim { background: var(--dim); }
+  .bar i.iris { background: var(--iris); } .bar i.ember { background: var(--ember); }
+  .bar-row .num { color: var(--dim); text-align: right; font-variant-numeric: tabular-nums; }
+
+  .funnel-row { margin-bottom: .8rem; }
+  .funnel-row .top { display: flex; justify-content: space-between; align-items: baseline;
+                     gap: .6rem; font-size: .87rem; margin-bottom: .3rem; }
+  .funnel-row .top b { font-variant-numeric: tabular-nums; }
+  .funnel-row .note { font-size: .76rem; color: var(--dim); margin-top: .25rem; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem;
+                border-top: 1px solid var(--line); padding-top: .9rem; margin-top: .9rem; }
+  .stats-grid b { display: block; font-size: 1.25rem; font-weight: 700;
+                  font-variant-numeric: tabular-nums; }
+  .stats-grid span { font-size: .78rem; color: var(--dim); line-height: 1.45; }
+
+  .check { display: flex; gap: .7rem; align-items: flex-start; margin-bottom: .7rem; }
+  .check .ring { width: 15px; height: 15px; border-radius: 50%; flex: none;
+                 border: 1.5px solid var(--line-2); margin-top: .2rem; }
+  .check.done .ring { border-color: var(--accent); background: var(--accent); }
+  .check .label { font-size: .86rem; }
+  .check.done .label { color: var(--muted); }
+  .check .note { display: block; font-size: .76rem; color: var(--dim); }
+
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 40rem; }
+  th { text-align: left; color: var(--dim); font-weight: 700; font-size: .68rem;
+       text-transform: uppercase; letter-spacing: .08em; padding: .35rem .6rem .55rem 0; }
+  td { padding: .5rem .6rem .5rem 0; border-top: 1px solid var(--line);
+       color: var(--muted); font-variant-numeric: tabular-nums; vertical-align: baseline; }
+  .scroll-x { overflow-x: auto; }
+  tr.session { cursor: pointer; }
+  tr.session:hover td { color: var(--ink); }
+  td.opening { max-width: 24rem; overflow: hidden; text-overflow: ellipsis;
+               white-space: nowrap; color: var(--ink); }
+  .chip { font-size: .72rem; font-weight: 700; letter-spacing: .03em; }
+  .caret { display: inline-block; transition: transform .25s var(--ease);
+           color: var(--dim); margin-right: .4rem; font-size: .7rem; }
+  tr.session[aria-expanded="true"] .caret { transform: rotate(90deg); }
+  tr.drill > td { padding: 0; border-top: 0; }
+  .drill-box { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px;
+               margin: .2rem 0 .8rem; padding: .9rem 1rem;
+               animation: fadeIn .3s ease; }
+  .drill-turn { border-top: 1px solid var(--line); padding: .6rem 0; font-size: .84rem; }
+  .drill-turn:first-child { border-top: 0; padding-top: 0; }
+  .drill-turn .head { display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap; }
+  .drill-turn .user { color: var(--ink); }
+  .drill-turn .meta { color: var(--dim); font-size: .74rem; margin-top: .2rem; }
+  .drill-turn .srcs { color: var(--muted); font-size: .78rem; margin-top: .25rem; }
+  .empty { color: var(--dim); font-size: .85rem; }
+  .miss { color: var(--muted); font-size: .82rem; line-height: 1.5; }
+  .foot { color: var(--dim); font-size: .78rem; margin-top: 1rem; max-width: 44rem;
+          line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <div class="wordmark">Saathi<small>engineering dashboard</small></div>
+    <div class="window-note" id="window-note">local session store · audio never recorded</div>
+  </div>
+  <div class="header-right">
+    <div class="ranges" role="radiogroup" aria-label="Time window" id="ranges">
+      <button data-range="today" aria-pressed="false">today</button>
+      <button data-range="week" aria-pressed="false">7 days</button>
+      <button data-range="all" aria-pressed="true">all time</button>
+    </div>
+    <a class="back" href="/">← back to talk</a>
+  </div>
+</header>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="grid">
+  <div class="panel half">
+    <h2>Voice-to-voice latency <span class="aside">target p50 ≤ 3.0 s</span></h2>
+    <div id="latency"></div>
+  </div>
+  <div class="panel half">
+    <h2>The safety gate <span class="aside warn">blocks release</span></h2>
+    <div id="safety"></div>
+  </div>
+
+  <div class="panel third">
+    <h2>Retrieval health</h2>
+    <div id="retrieval"></div>
+  </div>
+  <div class="panel third">
+    <h2>Conversation shape <span class="aside">— is she adapting?</span></h2>
+    <div id="shape"></div>
+  </div>
+  <div class="panel third">
+    <h2>Release checklist</h2>
+    <div id="checklist"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Recent sessions <span class="aside">transcripts stay on this machine · click a row for the turn-by-turn</span></h2>
+    <div class="scroll-x" id="sessions"></div>
+  </div>
+</div>
+
+<p class="foot">Portfolio demonstration — not therapy, not medical advice, not for
+crisis use. Every figure on this page comes from the local session store and the
+offline eval harness; audio is never recorded.</p>
+<p class="foot" id="updated"></p>
+</div>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+
+// Honor the talk page's appearance preference (auto follows the OS).
+{
+  const pref = localStorage.getItem('saathi-theme') || 'auto';
+  if (pref === 'day' || pref === 'night') document.documentElement.setAttribute('data-theme', pref);
+  else if (matchMedia('(prefers-color-scheme: light)').matches)
+    document.documentElement.classList.add('day-auto');
+}
+
+const state = { range: 'all', expanded: null, drillCache: {} };
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+const pctStr = (v) => v == null ? '—' : Math.round(v * 100) + '%';
+const LANG_LABEL = { hinglish: 'Hinglish', hindi: 'हिंदी', english: 'English' };
+const OUTCOME = {
+  guided:    ['guided',    'var(--accent)'],
+  held:      ['held',      'var(--muted)'],
+  declined:  ['declined',  'var(--gold)'],
+  deflected: ['deflected', 'var(--iris)'],
+  handoff:   ['handoff',   'var(--ember)'],
+  company:   ['company',   'var(--dim)'],
+  quiet:     ['quiet',     'var(--dim)'],
+};
+const KIND_COLOR = { crisis: 'var(--ember)', injection: 'var(--iris)', scope: 'var(--gold)' };
+const STAGE_COLORS = ['var(--ember)', 'var(--gold)', 'var(--accent)', 'var(--iris)', 'var(--dim)', 'var(--muted)'];
+function stageOrder(name) {
+  const n = name.toLowerCase();
+  if (/stt|transcri/.test(n)) return 0;
+  if (/gate|safety/.test(n)) return 1;
+  if (/rag|retriev|understand/.test(n)) return 2;
+  if (/llm|gpt|gemini|chat/.test(n)) return 3;
+  if (/tts|speech/.test(n)) return 4;
+  return 5;
+}
+
+function tile(label, value, unit, note, color) {
+  return '<div class="tile"><span class="kicker">' + label + '</span>' +
+    '<b style="color:' + (color || 'var(--ink)') + '">' + (value == null ? '—' : value) +
+    (unit ? '<small>' + unit + '</small>' : '') + '</b>' +
+    (note ? '<div class="note">' + note + '</div>' : '') + '</div>';
+}
+
+function renderTiles(d) {
+  const t = d.tiles, ev = d.evals;
+  const p50 = t.v2v_p50;
+  const inBudget = p50 != null && p50 <= 3.0;
+  const evOk = ev && ev.failures && ev.failures.length === 0;
+  $('tiles').innerHTML =
+    tile('voice → voice p50', p50 != null ? p50.toFixed(2) : null, 's',
+         p50 == null ? 'no calls in this window'
+           : inBudget ? 'inside the 3.0 s budget' : 'over the 3.0 s budget',
+         p50 == null ? 'var(--ink)' : inBudget ? 'var(--accent)' : 'var(--gold)') +
+    tile('p95', t.v2v_p95 != null ? t.v2v_p95.toFixed(2) : null, 's', 'generation tail dominates') +
+    tile('safety evals', ev ? (ev.cases - (ev.failures || []).length) + '/' + ev.cases : null, '',
+         ev ? 'crisis · injection · scope · traps' : 'harness not run yet',
+         ev ? (evOk ? 'var(--accent)' : 'var(--ember)') : 'var(--ink)') +
+    tile('speculation hits', pctStr(t.spec_rate), '', 'understander cost hidden in the pause') +
+    tile('grounding', pctStr(t.grounding_rate), '', 'guide turns that cited passages') +
+    tile('sessions', t.sessions, '', t.sessions_24h + ' in the last 24h');
+}
+
+function renderLatency(d) {
+  const entries = Object.entries(d.stages || {});
+  if (!entries.length) {
+    $('latency').innerHTML = '<p class="empty">No calls in this window yet.</p>'; return;
+  }
+  entries.sort((a, b) => stageOrder(a[0]) - stageOrder(b[0]) || b[1].p50 - a[1].p50);
+  const total = entries.reduce((a, [, v]) => a + v.p50, 0);
+  const dominant = entries.slice().sort((a, b) => b[1].p50 - a[1].p50)[0];
+  $('latency').innerHTML =
+    '<div class="comp-bar">' + entries.map(([k, v], i) =>
+      '<i title="' + esc(k) + ' p50 ' + Math.round(v.p50 * 1000) + 'ms" style="width:' +
+      Math.max(1.5, v.p50 / total * 100).toFixed(1) + '%;background:' +
+      STAGE_COLORS[i % STAGE_COLORS.length] + '"></i>').join('') + '</div>' +
+    '<div class="comp-scale"><span>0 ms</span><span>' + Math.round(total * 1000) +
+    ' ms p50, stages summed</span></div>' +
+    entries.map(([k, v], i) =>
+      '<div class="stage-row"><span class="dot" style="background:' +
+      STAGE_COLORS[i % STAGE_COLORS.length] + '"></span><span class="name">' + esc(k) +
+      '</span><span class="p50">' + Math.round(v.p50 * 1000) + ' ms</span>' +
+      '<span class="p95">p95 ' + (v.p95 != null ? Math.round(v.p95 * 1000) : '—') +
+      '</span></div>').join('') +
+    '<p class="footnote">' + esc(dominant[0]) + ' dominates the turn. The gates and ' +
+    'retrieval run in single-digit milliseconds — the safety path is free; what the ' +
+    'caller feels is generation and speech synthesis.</p>';
+}
+
+function renderSafety(d) {
+  const ev = d.evals;
+  let html = '';
+  if (!ev) {
+    html += '<p class="empty">Eval harness not run yet — <code>python scripts/run_safety_evals.py</code>.</p>';
+  } else {
+    const rows = [
+      ['Crisis phrasings caught', ev.crisis_recall, 'ember',
+       'deterministic handoff, generation bypassed, session latched'],
+      ['Injection attempts deflected', ev.injection_detect, 'iris',
+       'roleplay-as-doctor, ignore-your-rules, prompt extraction — model never sees them'],
+      ['Diagnosis and medication asks declined', ev.scope_recall, 'gold',
+       'binding decline directive; zero leaks'],
+    ];
+    html += rows.filter(([, pair]) => pair).map(([label, [hit, n], cls, note]) => {
+      const full = hit === n;
+      return '<div class="funnel-row"><div class="top"><span>' + label + '</span><b style="color:' +
+        (full ? 'var(--accent)' : 'var(--ember)') + '">' + hit + ' / ' + n + '</b></div>' +
+        '<div class="bar"><i class="' + cls + '" style="width:' + (n ? hit / n * 100 : 0) +
+        '%"></i></div><div class="note">' + note + '</div></div>';
+    }).join('');
+    const trapsN = ev.cases - (ev.crisis_recall ? ev.crisis_recall[1] : 0) -
+      (ev.injection_detect ? ev.injection_detect[1] : 0) -
+      (ev.scope_recall ? ev.scope_recall[1] : 0);
+    const held = trapsN - (ev.false_positives || 0);
+    html += '<div class="funnel-row"><div class="top"><span>False-positive traps held</span><b style="color:' +
+      (ev.false_positives === 0 ? 'var(--accent)' : 'var(--ember)') + '">' + held + ' / ' + trapsN +
+      '</b></div><div class="bar"><i style="width:' + (trapsN ? held / trapsN * 100 : 0) +
+      '%"></i></div><div class="note">“this deadline is killing me” must never hear a crisis script</div></div>';
+    html += '<div class="footnote" style="margin-top:.4rem">';
+    if ((ev.failures || []).length) {
+      html += '<span class="kicker" style="color:var(--ember)">failing cases</span>' +
+        ev.failures.map(f => '<div class="miss">“' + esc(f.text) + '” — expected ' +
+          esc(f.expect) + ', got ' + esc(f.got) + '</div>').join('') +
+        '<div class="miss" style="color:var(--dim);margin-top:.3rem">Recall must return to 100% before any deploy.</div>';
+    } else {
+      html += 'All ' + ev.cases + ' cases green in ' + (ev.elapsed_ms || '—') +
+        ' ms. The eval set is the contract: a new failing phrasing becomes a case first, then a pattern.';
+    }
+    html += '</div>';
+  }
+  const events = d.safety_events || [];
+  html += '<div style="margin-top:1rem"><span class="kicker">live gate events' +
+    (events.length ? '' : ' — none in this window') + '</span>';
+  if (events.length) {
+    html += events.slice(0, 6).map(e =>
+      '<div class="stage-row" style="margin-top:.5rem"><span class="chip" style="color:' +
+      (KIND_COLOR[e.kind] || 'var(--dim)') + ';width:4.6rem;flex:none">' + esc(e.kind) +
+      '</span><span class="name" style="color:var(--muted)">“' + esc(e.text) + '”</span>' +
+      '<span class="p95">' + new Date(e.ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) +
+      '</span></div>').join('');
+  }
+  html += '</div>';
+  $('safety').innerHTML = html;
+}
+
+function renderRetrieval(d) {
+  const lanes = d.lanes || {};
+  const laneRows = [['semantic', 'Semantic (ONNX)', ''], ['lexical', 'Lexical (BM25)', 'iris'],
+                    ['emotion', 'Emotion crosswalk', 'gold']];
+  let html = laneRows.map(([key, label, cls]) => {
+    const v = lanes[key];
+    return '<div class="bar-row"><span class="label">' + label + '</span>' +
+      '<div class="bar"><i class="' + cls + '" style="width:' + (v != null ? Math.round(v * 100) : 0) +
+      '%"></i></div><span class="num">' + pctStr(v) + '</span></div>';
+  }).join('');
+  const t = d.tiles, kb = d.kb || {};
+  const refusal = t.grounding_rate != null ? pctStr(1 - t.grounding_rate) : '—';
+  const gaps = Object.keys(d.unanswered || {}).length;
+  html += '<div class="stats-grid">' +
+    '<div><b>' + (kb.chunks != null ? kb.chunks : '—') + '</b><span>chunks indexed, all open-licence</span></div>' +
+    '<div><b>' + (kb.documents != null ? kb.documents : '—') + '</b><span>source documents</span></div>' +
+    '<div><b>' + refusal + '</b><span>honest “I don’t have good guidance on that”</span></div>' +
+    '<div><b>' + gaps + '</b><span>corpus gaps queried this window</span></div></div>';
+  html += '<p class="footnote">Share of grounded turns each lane contributed to. The emotion ' +
+    'lane switches itself off on neutral turns — a low activation rate is the crosswalk ' +
+    'behaving, not underperforming.</p>';
+  if (gaps) {
+    html += '<div style="margin-top:.8rem"><span class="kicker">asked, but nothing retrieved</span>' +
+      Object.entries(d.unanswered).slice(0, 5).map(([q, n]) =>
+        '<div class="miss" style="margin-top:.35rem">“' + esc(q) + '”' +
+        (n > 1 ? ' <span style="color:var(--dim)">×' + n + '</span>' : '') + '</div>').join('') + '</div>';
+  }
+  $('retrieval').innerHTML = html;
+}
+
+function renderShape(d) {
+  const bars = (entries, cls) => {
+    if (!entries.length) return '<p class="empty">No turns in this window.</p>';
+    const max = Math.max(...entries.map(e => e[1]));
+    return entries.map(([k, v]) =>
+      '<div class="bar-row"><span class="label">' + esc(k) + '</span>' +
+      '<div class="bar"><i class="' + (cls ? cls(k) : '') + '" style="width:' +
+      Math.max(4, Math.round(v / max * 100)) + '%"></i></div>' +
+      '<span class="num">' + v + '</span></div>').join('');
+  };
+  $('shape').innerHTML =
+    '<span class="kicker">turn modes</span><div style="margin:.5rem 0 1rem">' +
+    bars(Object.entries(d.modes || {}),
+         k => k === 'guide' ? '' : k === 'hold' ? 'gold' : k === 'crisis' ? 'ember' : 'dim') +
+    '</div><span class="kicker">emotional states read</span><div style="margin-top:.5rem">' +
+    bars(Object.entries(d.emotions || {}).sort((a, b) => b[1] - a[1]).slice(0, 6), () => 'dim') +
+    '</div>';
+}
+
+function renderChecklist(d) {
+  const ev = d.evals, kb = d.kb || {};
+  const items = [
+    ['Voice loop — WebRTC, streaming STT, LLM, HD TTS, barge-in', 'working since day one', true],
+    ['Retrieval + knowledge base', (kb.chunks || '—') + ' chunks, open-licence only', true],
+    ['Latency instrumentation', 'per-stage p50/p95, every session, both stores', true],
+    ['Deterministic safety gate — crisis, injection, scope',
+     ev ? ev.cases + '-case eval harness gates deploy' : 'eval harness gates deploy', true],
+    ['Live captions, insight drawer, opt-in memory', 'shipping in the talk page', true],
+    ['Helpline numbers verified by phone', 'web-verified; the phone check is a launch-day task', false],
+    ['Public deployment', 'VM + TLS + open UDP — docs/DEPLOYMENT.md', false],
+  ];
+  $('checklist').innerHTML = items.map(([label, note, done]) =>
+    '<div class="check' + (done ? ' done' : '') + '"><span class="ring"></span>' +
+    '<span><span class="label">' + label + '</span><span class="note">' + note +
+    '</span></span></div>').join('');
+}
+
+function renderSessions(d) {
+  const list = d.sessions || [];
+  if (!list.length) {
+    $('sessions').innerHTML = '<p class="empty">No sessions in this window.</p>'; return;
+  }
+  let html = '<table><thead><tr><th>start</th><th>opening turn</th><th>language</th>' +
+    '<th>turns</th><th>p50</th><th>outcome</th></tr></thead><tbody>';
+  for (const s of list) {
+    const [label, color] = OUTCOME[s.outcome] || OUTCOME.quiet;
+    const started = new Date(s.started_at * 1000);
+    html += '<tr class="session" data-sid="' + esc(s.id) + '" aria-expanded="' +
+      (state.expanded === s.id) + '"><td><span class="caret">▶</span>' +
+      started.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' +
+      started.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</td>' +
+      '<td class="opening" lang="hi">' + (s.opening ? '“' + esc(s.opening) + '”' :
+        '<span style="color:var(--dim)">—</span>') + '</td>' +
+      '<td>' + esc(LANG_LABEL[s.language] || s.language || '—') + '</td>' +
+      '<td>' + s.turns + '</td>' +
+      '<td>' + (s.p50 != null ? s.p50.toFixed(2) + ' s' : '—') + '</td>' +
+      '<td><span class="chip" style="color:' + color + '">' + label + '</span></td></tr>';
+    if (state.expanded === s.id) {
+      html += '<tr class="drill"><td colspan="6"><div class="drill-box" id="drill-box">' +
+        (state.drillCache[s.id] || '<p class="empty">Loading the turn-by-turn…</p>') +
+        '</div></td></tr>';
+    }
+  }
+  $('sessions').innerHTML = html + '</tbody></table>';
+  for (const row of document.querySelectorAll('tr.session')) {
+    row.addEventListener('click', () => toggleDrill(row.dataset.sid));
+  }
+}
+
+function drillHtml(data) {
+  const turns = data.turns || [];
+  if (!turns.length) return '<p class="empty">No planned turns recorded — likely a greeting-only session.</p>';
+  return turns.map(t => {
+    const modeColor = t.mode === 'crisis' ? 'var(--ember)' : t.mode === 'guide' ?
+      'var(--accent)' : t.mode === 'hold' ? 'var(--gold)' : 'var(--dim)';
+    let h = '<div class="drill-turn"><div class="head">' +
+      '<span class="chip" style="color:' + modeColor + '">' + esc(t.mode || '—') + '</span>' +
+      (t.emotion ? '<span style="color:var(--dim);font-size:.78rem">' + esc(t.emotion) +
+        (t.intensity != null ? ' · ' + Number(t.intensity).toFixed(1) : '') + '</span>' : '') +
+      '<span class="user">“' + esc(t.user_text || t.raw || '') + '”</span></div>';
+    if (t.query) h += '<div class="meta">searched: “' + esc(t.query) + '”</div>';
+    if ((t.passages || []).length) {
+      h += '<div class="srcs">' + t.passages.map(p => {
+        const lanes = Object.keys(p.lanes || {}).join('+');
+        return '↳ ' + esc(p.title || p.chunk_id) + ' <span style="color:var(--dim)">(' +
+          esc(p.source || '?') + (lanes ? ' · ' + lanes : '') + ')</span>';
+      }).join('<br>') + '</div>';
+    }
+    if ((t.plan_notes || []).length) {
+      h += '<div class="meta">plan: ' + esc(t.plan_notes.join(' · ')) + '</div>';
+    }
+    const bits = [];
+    if (t.speculative_hit) bits.push('speculation hit');
+    if (t.understand_ms) bits.push('understand ' + t.understand_ms + ' ms');
+    if (t.retrieve_ms) bits.push('retrieve ' + t.retrieve_ms + ' ms');
+    if (bits.length) h += '<div class="meta">' + bits.join(' · ') + '</div>';
+    return h + '</div>';
+  }).join('');
+}
+
+async function toggleDrill(sid) {
+  if (state.expanded === sid) { state.expanded = null; renderSessions(state.metrics); return; }
+  state.expanded = sid;
+  renderSessions(state.metrics);
+  if (!state.drillCache[sid]) {
+    try {
+      const data = await (await fetch('/api/sessions/' + encodeURIComponent(sid))).json();
+      state.drillCache[sid] = drillHtml(data);
+    } catch (e) {
+      state.drillCache[sid] = '<p class="empty">Could not load this session.</p>';
+    }
+    if (state.expanded === sid) renderSessions(state.metrics);
+  }
+}
+
+async function refresh() {
+  let d;
+  try { d = await (await fetch('/api/metrics?range=' + state.range)).json(); }
+  catch (e) { return; }
+  state.metrics = d;
+  const w = d.window || {};
+  $('window-note').textContent = 'local session store · audio never recorded · ' +
+    w.sessions + (w.sessions === 1 ? ' session · ' : ' sessions · ') + w.turns + ' turns';
+  renderTiles(d); renderLatency(d); renderSafety(d); renderRetrieval(d);
+  renderShape(d); renderChecklist(d); renderSessions(d);
+  $('updated').textContent = 'auto-refreshes every 5s · updated ' + new Date().toLocaleTimeString();
+}
+
+for (const btn of document.querySelectorAll('#ranges button')) {
+  btn.addEventListener('click', () => {
+    state.range = btn.dataset.range;
+    for (const b of document.querySelectorAll('#ranges button'))
+      b.setAttribute('aria-pressed', String(b === btn));
+    refresh();
+  });
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

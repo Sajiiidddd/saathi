@@ -1,0 +1,13 @@
+{
+  "name": "Saathi",
+  "short_name": "Saathi",
+  "description": "A voice companion for everyday wellbeing.",
+  "icons": [
+    { "src": "/brand/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#0E0F12",
+  "background_color": "#0E0F12",
+  "display": "standalone",
+  "start_url": "/"
+}

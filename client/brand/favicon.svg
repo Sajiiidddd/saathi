@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    :root { --disc:#1F2227; --a:#9FE0C7; --b:#E8C97A; --rim:rgba(255,255,255,.10); }
+    @media (prefers-color-scheme: light) {
+      :root { --disc:#F4F4F2; --a:#105E4C; --b:#8C6210; --rim:rgba(20,22,26,.16); }
+    }
+  </style>
+  <defs>
+    <clipPath id="disc"><circle cx="32" cy="32" r="29"/></clipPath>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="var(--disc)"/>
+  <g clip-path="url(#disc)" fill="none" stroke-linecap="round">
+    <path d="M -6 28 C 8 20, 20 34, 32 28 S 52 20, 70 28" stroke="var(--a)" stroke-width="10"/>
+    <path d="M -6 40 C 10 48, 24 34, 38 40 S 58 48, 70 39" stroke="var(--b)" stroke-width="9"/>
+  </g>
+  <circle cx="32" cy="32" r="29.5" fill="none" stroke="var(--rim)" stroke-width="1"/>
+</svg>

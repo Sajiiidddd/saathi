@@ -2,219 +2,1522 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Saathi — voice wellbeing companion</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Saathi — talk</title>
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" sizes="32x32">
+<link rel="icon" href="/brand/favicon-16.png" sizes="16x16">
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+<link rel="manifest" href="/brand/site.webmanifest">
+<meta name="theme-color" content="#0E0F12" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F4F2" media="(prefers-color-scheme: light)">
 <style>
+  /* ---- fonts: bundled, OFL-licensed ---------------------------------- */
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 400; font-display: swap;
+    src: url('/fonts/HankenGrotesk-400-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 500; font-display: swap;
+    src: url('/fonts/HankenGrotesk-500-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 700; font-display: swap;
+    src: url('/fonts/HankenGrotesk-700-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Noto Sans Devanagari'; font-weight: 400; font-display: swap;
+    src: url('/fonts/NotoSansDevanagari-400-devanagari.woff2') format('woff2');
+    unicode-range: U+0900-097F, U+1CD0-1CFA, U+A8E0-A8FF; }
+  @font-face { font-family: 'Noto Sans Devanagari'; font-weight: 600; font-display: swap;
+    src: url('/fonts/NotoSansDevanagari-600-devanagari.woff2') format('woff2');
+    unicode-range: U+0900-097F, U+1CD0-1CFA, U+A8E0-A8FF; }
+
+  /* ---- tokens (finalised: near-black / bone neutral, one accent) ------- */
   :root {
-    --bg: #fbf7f2; --card: #fffdfb; --ink: #2b2724; --muted: #6f6862;
-    --accent: #7c6a58; --line: #e8ded2; --warn-bg: #fdf4f4;
-    --warn-line: #e6c9c5; --warn-ink: #8a3f38; --live: #3f7d5a;
+    --bg: #0E0F12; --bg-2: #15171B; --card: #17191D; --card-2: #1F2227;
+    --ink: #F7F7F5; --muted: rgba(247,247,245,.66); --ink-3: #9B9DA3; --dim: #7A7D84;
+    --line: rgba(255,255,255,.08); --line-2: rgba(255,255,255,.17);
+    --accent: #9FE0C7; --accent-ink: #0D2A21; --ember: #F2887A;
+    --overlay: rgba(8,10,18,.66);
+    --glass: rgba(255,255,255,.055); --glass-bd: rgba(255,255,255,.14);
+    --glass-hi: rgba(255,255,255,.10); --glass-sh: 0 10px 30px rgba(0,0,0,.30);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --ease: cubic-bezier(.22,1,.36,1);
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #171513; --card: #201d1a; --ink: #ece7e1; --muted: #a49b92;
-      --accent: #c9b39a; --line: #332e29; --warn-bg: #2a1f1e;
-      --warn-line: #58403c; --warn-ink: #e8b4ad; --live: #7fc49e;
+  :root[data-theme="day"] {
+    --bg: #F4F4F2; --bg-2: #EAEAE7; --card: #FFFFFF; --card-2: #F5F5F3;
+    --ink: #14161A; --muted: rgba(20,22,26,.72); --ink-3: #55585F; --dim: #65686F;
+    --line: #E2E2DE; --line-2: #CACAC5;
+    --accent: #14161A; --accent-ink: #F7F7F5; --ember: #C2544A;
+    --overlay: rgba(20,22,26,.34);
+    --glass: rgba(255,255,255,.62); --glass-bd: rgba(27,31,46,.10);
+    --glass-hi: rgba(255,255,255,.9); --glass-sh: 0 10px 30px rgba(27,31,46,.10);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="night"]):not([data-theme="day"]) {
+      --bg: #F4F4F2; --bg-2: #EAEAE7; --card: #FFFFFF; --card-2: #F5F5F3;
+      --ink: #14161A; --muted: rgba(20,22,26,.72); --ink-3: #55585F; --dim: #65686F;
+      --line: #E2E2DE; --line-2: #CACAC5;
+      --accent: #14161A; --accent-ink: #F7F7F5; --ember: #C2544A;
+      --overlay: rgba(20,22,26,.34);
+      --glass: rgba(255,255,255,.62); --glass-bd: rgba(27,31,46,.10);
+      --glass-hi: rgba(255,255,255,.9); --glass-sh: 0 10px 30px rgba(27,31,46,.10);
     }
   }
-  * { box-sizing: border-box; }
+  html.theme-fading, html.theme-fading * {
+    transition: background-color .35s var(--ease), color .35s var(--ease),
+                border-color .35s var(--ease) !important;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
   body {
-    margin: 0; padding: 2.5rem 1.25rem 4rem; background: var(--bg); color: var(--ink);
-    font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
-    display: flex; justify-content: center;
+    background: var(--bg); color: var(--ink);
+    font: 15px/1.62 'Hanken Grotesk', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; overflow: hidden;
+    display: flex; flex-direction: column;
   }
-  main { width: 100%; max-width: 40rem; }
-  h1 { font-size: 1.9rem; margin: 0 0 .2rem; letter-spacing: -.02em; font-weight: 600; }
-  .sub { color: var(--muted); margin: 0 0 1.75rem; }
-  .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-    padding: 1.5rem; margin-bottom: 1.25rem;
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+  /* Bracketed mono micro-label — the section-label device everywhere. */
+  .label { font-family: var(--mono); font-size: 11.5px; letter-spacing: .01em;
+           font-weight: 500; color: var(--dim); white-space: nowrap; text-transform: none; }
+  .num { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--dim);
+         font-variant-numeric: tabular-nums; }
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid var(--glass-bd);
+    box-shadow: inset 0 1px 0 var(--glass-hi), var(--glass-sh);
   }
-  .gate { background: var(--warn-bg); border-color: var(--warn-line); }
-  .gate h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em;
-             color: var(--warn-ink); margin: 0 0 .6rem; }
-  .gate p { margin: 0 0 .75rem; color: var(--warn-ink); font-size: .93rem; }
-  .gate ul { margin: 0; padding-left: 1.1rem; font-size: .93rem; color: var(--warn-ink); }
-  .gate li { margin-bottom: .2rem; }
-  .talk { display: flex; align-items: center; gap: 1.1rem; }
-  button {
-    font: inherit; font-weight: 550; padding: .8rem 1.5rem; border-radius: 999px;
-    border: 1px solid var(--accent); background: var(--accent); color: var(--card);
-    cursor: pointer; transition: opacity .15s, transform .05s;
+  .mark { border-radius: 50%; flex: none;
+    background: radial-gradient(circle at 42% 36%, rgba(159,224,199,.9), rgba(232,201,122,.28) 55%, transparent 74%);
+    animation: emberBreath 7s ease-in-out infinite; }
+  @keyframes emberBreath { 0%,100% { opacity: .55; } 50% { opacity: .95; } }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ---- layout: header + scroller (content scrolls inside) --------------- */
+  .scroller { flex: 1; min-height: 0; overflow-y: auto;
+              display: flex; flex-direction: column; align-items: center;
+              padding: 0 clamp(16px, 4vw, 40px); }
+  .frame { max-width: 1100px; width: 100%; flex: 1; display: flex; flex-direction: column; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: max(22px, env(safe-area-inset-top)) 0 8px;
   }
-  button:hover:not(:disabled) { opacity: .88; }
-  button:active:not(:disabled) { transform: translateY(1px); }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  button.secondary { background: transparent; color: var(--accent); }
-  .status { color: var(--muted); font-size: .93rem; display: flex; align-items: center; gap: .55rem; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
-  .dot.live { background: var(--live); animation: pulse 1.8s ease-in-out infinite; }
-  .dot.error { background: var(--warn-ink); }
-  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); }
-                     50% { opacity: .45; transform: scale(.82); } }
-  @media (prefers-reduced-motion: reduce) { .dot.live { animation: none; } }
-  h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em;
-       color: var(--muted); margin: 0 0 .7rem; font-weight: 600; }
-  .try li { margin-bottom: .35rem; font-size: .95rem; }
-  .try ul { margin: 0; padding-left: 1.15rem; }
-  code { background: var(--bg); padding: .1rem .35rem; border-radius: 4px;
-         font-size: .88em; border: 1px solid var(--line); }
-  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 2rem; }
+  .wordmark { font-weight: 700; font-size: 21px; letter-spacing: -.02em;
+              display: flex; align-items: baseline; gap: 10px; }
+  .wordmark span { font-weight: 400; font-size: 13px; color: var(--dim); }
+  .hdr-right { display: flex; align-items: center; gap: 8px; }
+  .pill {
+    font-size: 13px; font-weight: 700; color: var(--muted);
+    border-radius: 9999px; padding: 8px 16px; min-height: 36px;
+    transition: border-color .18s var(--ease), color .18s var(--ease), background .18s var(--ease);
+  }
+  .pill:hover { color: var(--ink); }
+  .pill.ember-hover:hover { border-color: var(--ember) !important; }
+  .pill.cc-pill { padding: 8px 18px; min-width: 56px; font-family: var(--mono);
+                  letter-spacing: .04em; }
+  /* filled state: solid accent, no glass — the inset highlight reads as a
+     grey rim over a solid fill, worst on Day's near-black accent */
+  .pill.cc-pill[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink);
+    border-color: var(--accent) !important; box-shadow: none;
+    backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .pill.bare { color: var(--ink-3); font-weight: 400; padding: 8px 10px; }
+  .pill.bare:hover { color: var(--ink); }
+  @media (max-width: 520px) {
+    .wordmark span { display: none; }
+    .pill { padding: 8px 12px; }
+  }
+
+  /* ---- stage ------------------------------------------------------------ */
+  main { flex: 1; display: flex; flex-direction: column; align-items: center;
+         justify-content: center; padding: 10px 0 24px; text-align: center; }
+  .presence { display: block; width: min(66vw, 38vh, 420px); height: min(66vw, 38vh, 420px);
+              border-radius: 50%; }
+  .status { margin-top: 2px; font-size: 15px; color: var(--muted); min-height: 24px;
+            text-align: center; width: 100%; max-width: 560px; }
+
+  /* captions live in the flow beneath the status line */
+  .caps { margin-top: 18px; max-width: 640px; width: 100%; text-align: center;
+          min-height: 100px; transition: opacity 1.2s var(--ease); }
+  .caps.fadeout { opacity: 0; }
+  .caps .bot { font-size: clamp(19px, 2.4vw, 23px); line-height: 1.55; color: var(--ink);
+               text-wrap: pretty; min-height: 1.55em; font-weight: 400; }
+  .caps .bot .w { display: inline-block; opacity: 0; transform: translateY(5px);
+    transition: opacity .28s var(--ease), transform .28s var(--ease); margin-right: .28em; }
+  .caps .bot .w.in { opacity: 1; transform: none; }
+  .caps .you { margin-top: 10px; font-size: 16px; line-height: 1.55; color: var(--muted);
+               transition: color .3s ease; min-height: 1.55em; }
+  .caps .you.interim { font-style: italic; color: var(--dim); }
+
+  .precall { display: flex; flex-direction: column; align-items: center;
+             gap: clamp(12px, 2.2vh, 20px); margin-top: clamp(12px, 2.2vh, 22px);
+             animation: riseIn .5s var(--ease); }
+  .seg { display: inline-flex; border-radius: 9999px; padding: 4px; gap: 2px; }
+  .seg button { font-size: 14px; font-weight: 700; padding: 9px 22px; border-radius: 9999px;
+                color: var(--ink-3); transition: background .25s ease, color .25s ease;
+                min-height: 40px; }
+  .seg button[aria-checked="true"] { background: var(--accent); color: var(--accent-ink); }
+  .lang-tag { font-size: 13px; color: var(--ink-3); min-height: 20px; text-align: center; }
+
+  .cta {
+    font-size: 17px; font-weight: 700; padding: 17px 44px; border-radius: 9999px;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+    box-shadow: 0 4px 24px rgba(0,0,0,.18);
+    transition: transform .2s var(--ease), box-shadow .2s ease, opacity .2s ease;
+  }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,.26); }
+  .cta:active { transform: translateY(0); }
+  .cta:disabled { opacity: .5; transform: none; cursor: default; }
+  .cta.small { font-size: 15px; padding: 14px 32px; }
+  .ghost { font-size: 13px; color: var(--ink-3); border-radius: 9999px; padding: 9px 18px;
+           transition: border-color .2s ease, color .2s ease; }
+  .ghost:hover { color: var(--ink); border-color: var(--line-2) !important; }
+  .row { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; }
+
+  .trystack { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 4px; }
+  .tryline { font-size: 14px; color: var(--muted); text-align: center; max-width: 430px;
+             text-wrap: pretty; }
+
+  /* ---- reading surfaces (gate, about) — full screen ---------------------- */
+  .surface { position: fixed; inset: 0; background: var(--bg); display: none;
+             align-items: flex-start; justify-content: center;
+             padding: clamp(28px, 7vh, 80px) 24px; overflow: auto; }
+  .surface.open { display: flex; }
+  .surface .inner { max-width: 600px; width: 100%; display: flex; flex-direction: column;
+                    animation: riseIn .6s var(--ease); }
+  .surface .brandrow { display: flex; align-items: center; gap: 13px; margin-bottom: 36px; }
+  .surface .brandrow b { font-weight: 700; font-size: 21px; letter-spacing: -.01em; }
+  .surface .brandrow span.k { font-size: 13.5px; color: var(--dim); }
+  .surface h1 { font-weight: 700; font-size: clamp(28px, 4.6vw, 42px); line-height: 1.12;
+                letter-spacing: -.032em; text-wrap: pretty; }
+  .pointgrid { display: grid; grid-template-columns: 30px 1fr; gap: 16px; align-items: start; }
+  .pointgrid .lead { font-size: 16.5px; font-weight: 700; color: var(--ink); line-height: 1.4;
+                     display: block; }
+  .pointgrid .body { font-size: 15px; line-height: 1.62; color: var(--muted); text-wrap: pretty;
+                     display: block; margin-top: 6px; }
+  .helppanel { display: flex; flex-direction: column; gap: 2px; margin-top: 12px;
+               padding: 8px; border-radius: 16px; }
+  .helppanel a { display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+                 padding: 11px 14px; border-radius: 11px; text-decoration: none;
+                 transition: background .18s ease; }
+  .helppanel a:hover { background: var(--glass-hi); }
+  .helppanel .nm { color: var(--ink); font-size: 14.5px; font-weight: 700; display: block; }
+  .helppanel .sub { color: var(--dim); font-size: 12px; display: block; }
+  .helppanel .ph { color: var(--ink); font-weight: 700; font-size: 14.5px; white-space: nowrap; }
+  .surface .footrow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+                      margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .surface .footnote { font-size: 12.5px; color: var(--dim); max-width: 250px; line-height: 1.5; }
+  .srcpanel { display: flex; flex-direction: column; gap: 2px; margin-top: 6px;
+              padding: 8px; border-radius: 16px; }
+  .srcpanel .rowline { display: flex; justify-content: space-between; gap: 14px;
+                       align-items: baseline; padding: 10px 14px; }
+  .srcpanel .rowline b { font-size: 14px; color: var(--ink); }
+  .srcpanel .rowline span { font-size: 12px; color: var(--ink-3); text-align: right; }
+
+  /* ---- modals (helplines, mic, close) ------------------------------------ */
+  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+           padding: 20px; background: var(--overlay); animation: fadeIn .25s ease; }
+  .modal.open { display: flex; }
+  .card { max-width: 440px; width: 100%; background: var(--card); border: 1px solid var(--line);
+          border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 16px;
+          animation: riseIn .35s var(--ease); max-height: 88dvh; overflow-y: auto; }
+  .card h2 { font-size: 21px; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
+  .card p { color: var(--muted); font-size: 14.5px; }
+  .helprow { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+             padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px;
+             text-decoration: none; color: var(--ink);
+             transition: border-color .2s ease, background .2s ease; }
+  .helprow:hover { border-color: var(--line-2); background: var(--card-2); }
+  .helprow .nm { font-weight: 700; font-size: 15px; display: block; }
+  .helprow .sub { font-size: 12.5px; color: var(--ink-3); display: block; }
+  .helprow .ph { font-weight: 700; font-size: 16px; white-space: nowrap; }
+
+  /* ---- crisis takeover: deliberately unhurried --------------------------- */
+  .crisis-surface { position: fixed; inset: 0; background: var(--bg); display: none;
+                    align-items: center; justify-content: center; padding: 24px;
+                    overflow: auto; animation: fadeIn .9s ease; }
+  .crisis-surface.open { display: flex; }
+  .crisis-inner { max-width: 540px; width: 100%; display: flex; flex-direction: column;
+                  gap: 26px; text-align: center; align-items: center; padding: 24px 0; }
+  .crisis-inner h1 { font-weight: 700; font-size: clamp(26px, 4.4vw, 36px); line-height: 1.25;
+                     letter-spacing: -.028em; text-wrap: pretty; }
+  .crisis-inner .emark { width: 64px; height: 64px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(242,136,122,.5), rgba(232,201,122,.14) 58%, transparent 72%);
+    animation: emberBreath 7s ease-in-out infinite; }
+  .call-primary { display: flex; flex-direction: column; gap: 3px; padding: 20px 22px;
+                  border-radius: 14px; background: var(--accent); color: var(--accent-ink);
+                  text-decoration: none; transition: transform .2s var(--ease); }
+  .call-primary:hover { transform: translateY(-2px); }
+  .call-primary b { font-weight: 700; font-size: 24px; }
+  .call-primary span { font-size: 13.5px; opacity: .75; }
+  .call-secondary { display: flex; flex-direction: column; gap: 3px; padding: 18px 22px;
+                    border-radius: 14px; border: 1px solid var(--line-2); color: var(--ink);
+                    text-decoration: none; transition: border-color .2s ease; }
+  .call-secondary:hover { border-color: var(--ember); }
+  .call-secondary b { font-weight: 700; font-size: 19px; }
+  .call-secondary span { font-size: 13px; color: var(--ink-3); }
+  .call-tertiary { display: flex; justify-content: center; gap: 18px; font-size: 13px;
+                   color: var(--ink-3); flex-wrap: wrap; }
+  .call-tertiary a { color: var(--ink-3); }
+
+  /* ---- drawers ------------------------------------------------------------ */
+  .scrim { position: fixed; inset: 0; background: var(--overlay); opacity: 0;
+           pointer-events: none; transition: opacity .25s var(--ease); }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100dvh; width: min(30rem, 100vw);
+    background: var(--card); border-left: 1px solid var(--line);
+    transform: translateX(102%); transition: transform .38s var(--ease);
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: none; }
+  .drawer .head { display: flex; align-items: center; gap: .7rem;
+                  padding: 20px 24px; border-bottom: 1px solid var(--line); }
+  .drawer .head h2 { font-size: 15px; font-weight: 700; flex: 1; }
+  .drawer .body { overflow-y: auto; padding: 24px; flex: 1; }
+  .drawer .close { color: var(--ink-3); font-size: 13px; }
+  .drawer .close:hover { color: var(--ink); }
+  @media (max-width: 720px) {
+    .drawer { top: auto; bottom: 0; right: 0; left: 0; width: 100vw; height: 82dvh;
+              border-left: none; border-top: 1px solid var(--line);
+              border-radius: 18px 18px 0 0; transform: translateY(103%); }
+    .drawer.open { transform: none; }
+  }
+
+  /* transcript */
+  .msg { max-width: 88%; margin-bottom: 18px; font-size: 14.5px; line-height: 1.55; }
+  .msg.you { margin-left: auto; text-align: right; color: var(--ink-3); }
+  .msg.bot { margin-right: auto; color: var(--ink); }
+  .chip {
+    display: inline-flex; align-items: center; gap: .35rem; margin-top: .4rem;
+    background: var(--card-2); border: 1px solid var(--line); border-radius: 9999px;
+    padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    color: var(--ink-3); transition: border-color .2s ease;
+  }
+  .chip:hover { border-color: var(--line-2); color: var(--ink); }
+  .chip .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hint { color: var(--dim); font-size: 13.5px; }
+
+  /* insight */
+  .insight section { margin-bottom: 26px; }
+  .insight .label { display: block; margin-bottom: 8px; }
+  .badge { display: inline-block; border-radius: 9999px; padding: 3px 10px;
+           font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .badge.guide { background: var(--accent); color: var(--accent-ink); }
+  .badge.hold { background: var(--glass); color: var(--ink); border: 1px solid var(--line-2); }
+  .badge.companion { background: var(--line-2); color: var(--ink); }
+  .badge.crisis { background: var(--ember); color: var(--bg); }
+  .badge.spec { background: #9FE0C7; color: #0D2A21; margin-left: .4rem; text-transform: none; }
+  .emotion-line { display: flex; align-items: center; gap: 14px; }
+  .emotion-line b { font-size: 16px; text-transform: capitalize; }
+  .meter { flex: 1; height: 1px; background: var(--line); position: relative; }
+  .meter i { position: absolute; top: -3px; transform: translateX(-50%);
+             width: 7px; height: 7px; border-radius: 50%; background: var(--ember); }
+  .emotion-line small { color: var(--ink-3); font-size: 12.5px; white-space: nowrap; }
+  .qraw { color: var(--ink-3); font-size: 13.5px; line-height: 1.5; }
+  .qarrow { color: var(--dim); font-size: 12.5px; margin: .35rem 0; }
+  .qnew { font-size: 13.5px; color: var(--ink); line-height: 1.5; }
+  .passage { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+             margin-bottom: 12px; }
+  .passage .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .passage .top b { font-size: 14px; }
+  .passage .src { color: var(--ink-3); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+  .passage p { color: var(--muted); font-size: 13px; line-height: 1.55; margin-top: 8px; }
+  .lanes { display: flex; gap: 16px; margin-top: 10px; font-size: 11.5px; color: var(--ink-3);
+           flex-wrap: wrap; }
+  .lanes b { color: var(--ink); }
+  .plan-note { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: .5rem; }
+  .timings { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .timings span { border: 1px solid var(--line); border-radius: 8px; padding: .3rem .6rem;
+                  font-size: 12.5px; color: var(--muted); }
+
+  /* settings */
+  .set-row { padding: 14px 0; }
+  .set-row .label { display: block; margin-bottom: 10px; }
+  .langrow { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+             width: 100%; padding: 13px 16px; border: 1px solid var(--line); border-radius: 12px;
+             text-align: left; transition: border-color .2s ease; margin-bottom: 8px; }
+  .langrow.on { background: var(--card-2); border-color: var(--line-2); }
+  .langrow .t { font-weight: 700; font-size: 14.5px; color: var(--ink); display: block; }
+  .langrow .d { font-size: 12.5px; color: var(--ink-3); display: block; margin-top: 2px; }
+  .langrow .radio { width: 16px; height: 16px; border-radius: 50%;
+                    border: 1.5px solid var(--line-2); flex: none; }
+  .langrow.on .radio { border-color: var(--ink); background: var(--ink); }
+  .morerow { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+             padding: 13px 16px; border: 1px dashed var(--line-2); border-radius: 12px;
+             opacity: .75; }
+  .morerow .t { font-weight: 700; font-size: 14.5px; color: var(--ink-3); display: block; }
+  .morerow .d { font-size: 12.5px; color: var(--dim); display: block; margin-top: 2px; }
+  .soontag { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+             color: var(--ink-3); border: 1px solid var(--line-2); border-radius: 9999px;
+             padding: 2px 8px; white-space: nowrap; }
+  .appearance-seg { display: flex; border-radius: 9999px; padding: 4px; gap: 2px; }
+  .appearance-seg button { font-size: 13.5px; font-weight: 700; flex: 1; min-height: 44px;
+    padding: 0 14px; border-radius: 9999px; color: var(--ink-3);
+    transition: background .25s ease, color .25s ease; }
+  .appearance-seg button[aria-checked="true"] { background: var(--accent); color: var(--accent-ink); }
+  .appearance-note { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; margin-top: 10px; }
+  .appearance-note.queued { color: var(--ember); }
+  .switchrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .switchrow .t { font-weight: 700; font-size: 14.5px; }
+  .switchrow .d, .set-row .sub { color: var(--ink-3); font-size: 12.5px; margin-top: 2px; }
+  input[type="checkbox"].sw { appearance: none; width: 44px; height: 25px; border-radius: 9999px;
+    border: 1px solid var(--line-2); background: transparent; position: relative; cursor: pointer;
+    flex: none; transition: background .2s ease; }
+  input[type="checkbox"].sw::after { content: ''; position: absolute; top: 2.5px; left: 3px;
+    width: 17px; height: 17px; border-radius: 50%; background: var(--ink);
+    transition: left .2s var(--ease); }
+  input[type="checkbox"].sw:checked { background: var(--ink-3); }
+  input[type="checkbox"].sw:checked::after { left: 22px; }
+  .membox { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+            background: var(--card-2); }
+  .membox p { font-size: 13px; line-height: 1.6; color: var(--muted); margin-top: 8px; }
+  .danger { color: var(--ember); font-size: 12.5px; text-decoration: underline;
+            text-underline-offset: 3px; }
+  .linkish { font-size: 12.5px; color: var(--ink-3); text-decoration: underline;
+             text-underline-offset: 3px; }
+  .linkish:hover { color: var(--ink); }
+  .aboutbtn { font-size: 13.5px; font-weight: 700; color: var(--ink); border-radius: 9999px;
+              padding: 11px 20px; align-self: flex-start; margin-top: 10px;
+              transition: border-color .2s ease; }
+  .aboutbtn:hover { border-color: var(--line-2) !important; }
+
+  /* z-order: transcript 55 · insight 58 · gate 60 · settings 65 · about 68 ·
+     helplines 70 · mic 75 · crisis 80 — overlays always above content. */
+  #transcript-scrim, #transcript { z-index: 55; }
+  #insight-scrim, #insight { z-index: 58; }
+  #gate { z-index: 60; }
+  #settings-scrim, #settings { z-index: 65; }
+  #about { z-index: 68; }
+  #helplines-modal { z-index: 70; }
+  #mic-card { z-index: 75; }
+  #crisis { z-index: 80; }
+  #close-card { z-index: 50; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; animation-duration: .01s !important; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>Saathi</h1>
-  <p class="sub">A voice companion for everyday wellbeing — stress, sleep, motivation.</p>
 
-  <section class="card gate">
-    <h2>Please read first</h2>
-    <p>
-      This is a <strong>portfolio demonstration</strong>. It is <strong>not therapy,
-      not medical advice, and not for use in a crisis</strong>. Saathi does not
-      diagnose and cannot help in an emergency.
-    </p>
-    <p>If you need to talk to a person right now, please contact:</p>
-    <ul id="helplines"><li>Loading helplines…</li></ul>
-  </section>
-
-  <section class="card">
-    <div class="talk">
-      <button id="start">Start talking</button>
-      <button id="stop" class="secondary" disabled>End</button>
-      <span class="status"><span class="dot" id="dot"></span><span id="status">Not connected</span></span>
+<div class="scroller">
+ <div class="frame">
+  <header>
+    <div class="wordmark">Saathi<span id="wordmark-sub">aapka saathi</span></div>
+    <div class="hdr-right">
+      <button class="pill glass ember-hover" id="need-person">Need a person?</button>
+      <button class="pill glass cc-pill" id="cc" aria-pressed="false" title="Live captions">cc</button>
+      <button class="pill bare" id="open-settings">settings</button>
     </div>
-  </section>
+  </header>
 
-  <section class="card try">
-    <h3>Things worth trying</h3>
-    <ul>
-      <li>“I haven't been sleeping well before exams.”</li>
-      <li><strong>Interrupt her mid-sentence</strong> — she should stop and listen.</li>
-      <li>“Do you think I have anxiety?” — she should decline to diagnose.</li>
-    </ul>
-  </section>
+  <main>
+    <canvas class="presence" id="presence" width="520" height="520" aria-hidden="true"></canvas>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
 
-  <footer>
-    Audio is never recorded. Transcripts and timing are logged locally for
-    engineering analysis only.
-  </footer>
-  <audio id="bot-audio" autoplay></audio>
-</main>
+    <div class="caps" id="captions" hidden>
+      <div class="bot" id="cap-bot"></div>
+      <div class="you" id="cap-you"></div>
+    </div>
+
+    <div class="precall" id="precall">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+        <div class="seg glass" id="langs" role="radiogroup" aria-label="Language"></div>
+        <div class="lang-tag" id="lang-tag"></div>
+      </div>
+      <button class="cta" id="start">Start talking</button>
+      <div class="trystack">
+        <div class="label" id="worth-label">[ worth trying ]</div>
+        <div id="trylines"></div>
+      </div>
+    </div>
+
+    <div id="incall" hidden>
+      <div class="row" style="margin-top:30px; animation:fadeIn .5s ease;">
+        <button class="ghost glass" id="transcript-open">see this conversation</button>
+        <button class="ghost glass" id="end" style="font-weight:700; color:var(--muted); padding:10px 26px;">End</button>
+      </div>
+    </div>
+  </main>
+ </div>
+</div>
+
+<!-- consent gate: full-screen reading surface. FAILS OPEN. -->
+<div class="surface" id="gate" role="dialog" aria-modal="true" aria-label="Before you talk to Saathi">
+  <div class="inner">
+    <div class="brandrow">
+      <span class="mark" style="width:32px; height:32px;" aria-hidden="true"></span>
+      <b>Saathi</b><span class="k" id="gate-kicker"></span>
+    </div>
+    <h1 id="gate-h1"></h1>
+    <div style="display:flex; flex-direction:column; gap:30px; margin-top:38px;">
+      <div class="pointgrid">
+        <span class="num" aria-hidden="true" style="padding-top:6px;">01</span>
+        <div><span class="lead" id="gate-p1-lead"></span><span class="body" id="gate-p1"></span></div>
+      </div>
+      <div class="pointgrid">
+        <span class="num" aria-hidden="true" style="padding-top:6px; color:var(--ember);">02</span>
+        <div><span class="lead" id="gate-p2-lead"></span><span class="body" id="gate-p2"></span>
+          <div class="helppanel glass" id="gate-helplines"></div>
+        </div>
+      </div>
+      <div class="pointgrid">
+        <span class="num" aria-hidden="true" style="padding-top:6px;">03</span>
+        <div><span class="lead" id="gate-p3-lead"></span><span class="body" id="gate-p3"></span></div>
+      </div>
+    </div>
+    <div class="footrow">
+      <button class="cta small" id="consent"></button>
+      <span class="footnote" id="gate-footnote"></span>
+    </div>
+  </div>
+</div>
+
+<!-- about: full-screen reading surface, reached from settings -->
+<div class="surface" id="about" role="dialog" aria-modal="true" aria-label="About Saathi">
+  <div class="inner">
+    <div class="brandrow">
+      <span class="mark" style="width:30px; height:30px;" aria-hidden="true"></span>
+      <b style="font-size:20px;">Saathi</b><span class="k" id="about-kicker"></span>
+    </div>
+    <h1 id="about-h1" style="font-size:clamp(28px,4.6vw,38px); line-height:1.14;"></h1>
+    <p id="about-lead" style="margin-top:20px; font-size:16.5px; line-height:1.62; color:var(--muted); text-wrap:pretty;"></p>
+    <div style="display:flex; flex-direction:column; gap:28px; margin-top:38px;">
+      <div>
+        <div class="label"><span style="color:var(--ink-3);">01</span>&nbsp; <span id="about-s1-label"></span></div>
+        <p id="about-s1" style="margin-top:8px; font-size:15px; line-height:1.62; color:var(--muted); text-wrap:pretty;"></p>
+      </div>
+      <div>
+        <div class="label"><span style="color:var(--ink-3);">02</span>&nbsp; <span id="about-s2-label"></span></div>
+        <p id="about-s2" style="margin-top:8px; font-size:15px; line-height:1.62; color:var(--muted); text-wrap:pretty;"></p>
+        <div class="srcpanel glass" id="about-sources"></div>
+        <p id="about-excluded" style="margin-top:8px; font-size:14px; line-height:1.6; color:var(--ink-3); text-wrap:pretty;"></p>
+      </div>
+      <div>
+        <div class="label"><span style="color:var(--ink-3);">03</span>&nbsp; <span id="about-s3-label"></span></div>
+        <p id="about-s3" style="margin-top:8px; font-size:15px; line-height:1.62; color:var(--muted); text-wrap:pretty;"></p>
+      </div>
+      <div>
+        <div class="label"><span style="color:var(--ink-3);">04</span>&nbsp; <span id="about-s4-label"></span></div>
+        <p id="about-s4" style="margin-top:8px; font-size:15px; line-height:1.62; color:var(--muted); text-wrap:pretty;"></p>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:18px; margin-top:38px; padding-top:26px; border-top:1px solid var(--line);">
+      <p id="about-attribution" style="font-size:12.5px; line-height:1.65; color:var(--dim); text-wrap:pretty;"></p>
+      <button class="cta small" id="about-close" style="align-self:flex-start;"></button>
+    </div>
+  </div>
+</div>
+
+<!-- mic pre-permission + denied recovery -->
+<div class="modal" id="mic-card">
+  <div class="card">
+    <div id="mic-ask">
+      <span class="label">[ one thing first ]</span>
+      <h2 style="margin-top:10px;">She needs to hear you</h2>
+      <p style="margin-top:10px;">Saathi is a voice companion — the conversation happens out loud.
+         Your browser will ask permission to use the microphone; the audio streams
+         directly to her and is <b>never recorded or stored</b>.</p>
+      <div class="row" style="justify-content:flex-start; margin-top:16px;">
+        <button class="cta small" id="mic-allow">Enable microphone</button>
+        <button class="ghost glass" id="mic-cancel">Not now</button>
+      </div>
+    </div>
+    <div id="mic-denied" hidden>
+      <span class="label">[ microphone blocked ]</span>
+      <h2 style="margin-top:10px;">Your browser said no</h2>
+      <p style="margin-top:10px;">That's okay — it happens. To let Saathi hear you, tap the
+         <b>lock / settings icon in the address bar</b>, allow the microphone
+         for this site, then try again.</p>
+      <div class="row" style="justify-content:flex-start; margin-top:16px;">
+        <button class="cta small" id="mic-retry">Try again</button>
+        <button class="ghost glass" id="mic-denied-close">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- helplines -->
+<div class="modal" id="helplines-modal">
+  <div class="card">
+    <h2 id="help-title"></h2>
+    <div id="helpline-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <button class="ghost glass" id="helplines-close" style="align-self:center;">close</button>
+  </div>
+</div>
+
+<!-- crisis takeover -->
+<div class="crisis-surface" id="crisis" role="dialog" aria-modal="true" aria-label="Please talk to a person now">
+  <div class="crisis-inner">
+    <div class="emark" aria-hidden="true"></div>
+    <h1 id="crisis-h1"></h1>
+    <p id="crisis-body" style="font-size:16px; line-height:1.6; color:var(--muted); max-width:420px;"></p>
+    <div id="crisis-calls" style="display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px;"></div>
+    <p id="crisis-stay" style="margin-top:6px; font-size:15px; color:var(--muted);"></p>
+    <button class="ghost glass" id="crisis-close"></button>
+  </div>
+</div>
+
+<!-- session close: one thing to keep -->
+<div class="modal" id="close-card">
+  <div class="card" style="max-width:460px; padding:32px; gap:14px;">
+    <span class="label" id="close-kicker"></span>
+    <p id="close-technique" style="font-size:19px; line-height:1.55; color:var(--ink); text-wrap:pretty;"></p>
+    <p id="close-source" style="font-size:13.5px; color:var(--ink-3);"></p>
+    <p id="close-farewell" style="margin-top:6px; font-size:15px;"></p>
+    <button class="cta small" id="close-done" style="align-self:flex-start; margin-top:6px;"></button>
+  </div>
+</div>
+
+<!-- settings drawer -->
+<div class="scrim" id="settings-scrim"></div>
+<div class="drawer" id="settings" role="dialog" aria-label="Settings">
+  <div class="head"><h2 id="set-title">settings</h2><button class="close" id="settings-close">close</button></div>
+  <div class="body">
+    <div class="set-row">
+      <span class="label" id="set-lang-label"></span>
+      <div id="langs-settings"></div>
+      <div class="morerow">
+        <span><span class="t" id="morelang-title"></span><span class="d" id="morelang-list"></span></span>
+        <span class="soontag" id="soon-tag">soon</span>
+      </div>
+    </div>
+    <div class="set-row">
+      <span class="label" id="set-appearance-label"></span>
+      <div class="appearance-seg glass" id="appearance" role="radiogroup" aria-label="Appearance"></div>
+      <div class="appearance-note" id="appearance-note"></div>
+      <div class="appearance-note queued" id="theme-queued-note" hidden></div>
+    </div>
+    <div class="set-row switchrow">
+      <span><span class="t" id="set-cc-title"></span><span class="d" id="set-cc-sub"></span></span>
+      <input type="checkbox" class="sw" id="cc-settings" />
+    </div>
+    <div class="set-row">
+      <div class="membox">
+        <div class="switchrow">
+          <span class="t">remember me</span>
+          <input type="checkbox" class="sw" id="remember" />
+        </div>
+        <p>Saathi can remember what helps you across conversations — what you've
+           tried, what worked, what you'd rather not hear again. Kept on this
+           device, deletable with one tap.</p>
+        <p style="margin-top:10px;"><button class="danger" id="forget" hidden>
+          Delete what Saathi remembers</button></p>
+      </div>
+    </div>
+    <div class="set-row">
+      <span class="label" id="set-privacy-label"></span>
+      <p class="sub">Audio is never recorded. Transcripts stay on this device for
+         quality only. This is a portfolio demonstration — not therapy, not
+         medical advice, not for crisis use.</p>
+      <p class="sub" style="margin-top:10px;">
+        <button class="linkish" id="reopen-gate"></button>
+        &nbsp;·&nbsp; <a class="linkish" href="/dashboard">open the dashboard</a></p>
+      <button class="aboutbtn glass" id="open-about"></button>
+    </div>
+  </div>
+</div>
+
+<!-- transcript drawer -->
+<div class="scrim" id="transcript-scrim"></div>
+<div class="drawer" id="transcript" role="dialog" aria-label="This conversation">
+  <div class="head"><h2 id="convo-title">this conversation</h2><button class="close" id="transcript-close">close</button></div>
+  <div class="body" id="transcript-body"><p class="hint">Nothing yet — say hello.</p></div>
+  <div style="padding:14px 24px; border-top:1px solid var(--line); font-size:12px; color:var(--dim);" id="convo-foot"></div>
+</div>
+
+<!-- insight drawer -->
+<div class="scrim" id="insight-scrim"></div>
+<div class="drawer" id="insight" role="dialog" aria-label="Why she said that">
+  <div class="head"><h2>why she said that</h2><button class="close" id="insight-close">close</button></div>
+  <div class="body insight" id="insight-body"></div>
+</div>
+
+<audio id="bot-audio" autoplay></audio>
 
 <script>
-const els = {
-  start: document.getElementById('start'),
-  stop: document.getElementById('stop'),
-  status: document.getElementById('status'),
-  dot: document.getElementById('dot'),
-  audio: document.getElementById('bot-audio'),
-  helplines: document.getElementById('helplines'),
-};
+'use strict';
+const $ = (id) => document.getElementById(id);
 
+/* ================= state ================= */
 let pc = null, micStream = null, pcId = null, pendingCandidates = [];
+let dataChannel = null, liveCaptions = false;
+let audioCtx = null, micAnalyser = null, botAnalyser = null;
+let connected = false, everGranted = false;
+let languages = [], helplines = [], turns = [], utterances = [], pollTimer = null;
+let latestMode = null;
 
-function setStatus(text, state) {
-  els.status.textContent = text;
-  els.dot.className = 'dot' + (state ? ' ' + state : '');
+/* Storage throws in sandboxed/private contexts. A throw must never take the
+   safety gate with it, so every access goes through these. */
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+everGranted = lsGet('saathi-mic-ok') === '1';
+
+let deviceId = lsGet('saathi-device');
+if (!deviceId) { deviceId = crypto.randomUUID(); lsSet('saathi-device', deviceId); }
+
+/* ================= the language rule =================
+   The selected mode governs EVERY string in the UI. English mode shows no
+   Devanagari anywhere (one exception: the हिंदी option label, an endonym).
+   Hinglish is romanised Latin only. Hindi is bilingual. Status lines are
+   stored as KEYS and resolved at render, so switching language re-renders
+   the current status instead of leaving a stale sentence. */
+const COPY = {
+  english: {
+    sub:'a companion', help:'Need a person?', settings:'settings',
+    langDesc:{ hinglish:'the Hindi–English mix, as people actually speak', hindi:'the whole conversation in Hindi', english:'calm, clear English' },
+    seeConvo:'see this conversation', end:'End', worth:'worth trying',
+    start:'Start talking',
+    try:['“I haven’t been sleeping well before exams.”','Interrupt her mid-sentence — she stops and listens.','“Everything feels heavy today.”'],
+    gateKicker:'a companion', gateH1:'Before we talk,', gateH2:'three plain things.',
+    gateP1Lead:'This is a portfolio demonstration.', gateP1:'Saathi is not therapy and not medical advice. She will never diagnose you.',
+    gateP2Lead:'She is not for a crisis.', gateP2:'If you are thinking of hurting yourself, please talk to a person now — these reach trained people, free, 24×7:',
+    gateP3Lead:'Audio is never recorded.', gateP3:'Transcripts stay on this device, for quality only.',
+    gateCta:'I understand', gateFootnote:'You can read this again anytime in settings.',
+    moreLangsTitle:'more languages', moreLangsList:'Bangla · Tamil · Marathi · Telugu', soonTag:'soon',
+    aboutCta:'About Saathi', aboutKicker:'what this is',
+    aboutH1:'A companion for the ordinary hard days.',
+    aboutLead:'Saathi is a voice companion for everyday wellbeing — stress, sleep, exam anxiety, low motivation. She listens, reflects back what she heard, and teaches one evidence-based technique at a time, naming out loud where it came from.',
+    aboutS1Label:'[ what she will not do ]',
+    aboutS1:'She does not diagnose. She does not discuss medication. And if you signal crisis, she stops being a coach entirely — a fixed code path hands you to human helplines before any search or generation runs. The refusal is a gate, not a request: it cannot depend on the model behaving well today.',
+    aboutS2Label:'[ where the guidance comes from ]',
+    aboutS2:'Curated open-licence sources only, each passage tagged with its source and licence, so any answer can be traced back to why it was given.',
+    aboutExcluded:'Deliberately excluded: modern self-help books, CBT workbooks, and the DSM — copyrighted, and the DSM would pull her toward the diagnosis she must never offer.',
+    aboutS3Label:'[ when she does not know ]',
+    aboutS3:'If nothing relevant is found, the answer is an honest “I don’t have good guidance on that.” She only speaks from passages actually retrieved — no uncited claims.',
+    aboutS4Label:'[ privacy ]',
+    aboutS4:'Audio is never recorded. Transcripts and timing stay on this device, for engineering quality only.',
+    aboutAttribution:'A portfolio demonstration — not therapy, not medical advice, not for crisis use. Contains public sector information licensed under the Open Government Licence v3.0 (NHS). WHO and NOBA content used under CC BY-NC-SA, non-commercial. US federal publications are public domain. Classic texts are public domain, via Project Gutenberg.',
+    aboutClose:'Back',
+    helpTitle:'People who can help — free, 24×7',
+    crisisH1:'You are not alone.', crisisH2:'This needs a person — right now.',
+    crisisBody:'Someone trained is a phone call away. Free, confidential, any hour.',
+    crisisStay:'Saathi will be here. Come back whenever you want to talk.',
+    crisisClose:'close this call gently',
+    closeKicker:'[ one thing to keep ]', closeFarewell:'Come back anytime.', closeDone:'done',
+    closeSourcePrefix:'from', convoTitle:'this conversation', convoFoot:'tap the chip under any of her turns to see why she said it',
+    setTitle:'settings', setLangLabel:'[ default language ]', setCaptions:'live captions',
+    setCaptionsSub:'her words and yours, as you speak', setPrivacy:'[ privacy ]', setReplay:'read the welcome note again',
+    setAppearance:'[ appearance ]', themeAuto:'Auto', themeDay:'Day', themeNight:'Night',
+    appearanceNote:'Auto follows your device, so late nights stay dark.',
+    themeQueuedNote:'Your device changed theme — Saathi will switch when this conversation ends.',
+    status:{ ready:'when you are ready', reaching:'reaching Saathi…', connected:'connected — say hello',
+      speaking:'Saathi is speaking', listening:'she is listening', hearing:'hearing you', thinking:'a moment —',
+      holding:'just here with you', barged:'you spoke — she stopped mid-sentence',
+      dip:'connection dipped — holding your place', back:'back with you — go on',
+      matters:'what you said matters — one moment', ended:'the call ended gently',
+      unreachable:'could not reach Saathi — is the server up?' },
+  },
+  hinglish: {
+    sub:'aapka saathi', help:'Kisi se baat karein?', settings:'settings',
+    langDesc:{ hinglish:'mix mein baat karo — jaise aap bolte hain', hindi:'poori baatcheet Hindi mein', english:'calm, clear English' },
+    seeConvo:'yeh baatcheet dekhein', end:'End', worth:'try karke dekhiye',
+    start:'Shuru karein?',
+    try:['“Exams se pehle neend nahi aa rahi.”','Beech me tok dijiye — wo ruk kar sunengi.','“Aaj mann bahut bhaari hai.”'],
+    gateKicker:'aapka saathi', gateH1:'Baat shuru karne se pehle,', gateH2:'teen seedhi baatein.',
+    gateP1Lead:'Yeh ek portfolio demonstration hai.', gateP1:'Saathi therapy nahi hai, na hi medical advice. Wo kabhi diagnose nahi karengi.',
+    gateP2Lead:'Crisis ke liye yeh jagah nahi hai.', gateP2:'Agar aap khud ko nuksaan pahunchane ka soch rahe hain, to abhi kisi insaan se baat kijiye — yeh sab free hain, 24×7:',
+    gateP3Lead:'Audio kabhi record nahi hota.', gateP3:'Transcript sirf isi device par rehta hai, quality ke liye.',
+    gateCta:'Samajh liya', gateFootnote:'Yeh note settings me kabhi bhi dobara padh sakte hain.',
+    moreLangsTitle:'aur bhashayein', moreLangsList:'Bangla · Tamil · Marathi · Telugu', soonTag:'soon',
+    aboutCta:'Saathi ke baare me', aboutKicker:'yeh kya hai',
+    aboutH1:'Rozmarra ke mushkil dinon ka saathi.',
+    aboutLead:'Saathi ek voice companion hai — stress, neend, exam ki ghabrahat, kaam karne ka mann na hona. Wo sunti hain, jo aapne kaha wo laut kar batati hain, aur ek waqt me ek evidence-based technique sikhati hain — bolkar batate hue ki wo kahan se aayi hai.',
+    aboutS1Label:'[ wo kya nahi karengi ]',
+    aboutS1:'Wo diagnose nahi karti. Dawa ki baat nahi karti. Aur agar aap crisis ka ishara dein, to wo coach banna hi band kar deti hain — ek fixed code path aapko insaani helpline tak pahunchata hai, koi search ya generation chalne se pehle. Yeh inkaar ek gate hai, request nahi: iska bharosa model ke aaj sahi chalne par nahi hona chahiye.',
+    aboutS2Label:'[ guidance kahan se aati hai ]',
+    aboutS2:'Sirf curated open-licence sources. Har passage par uska source aur licence likha hai, isliye kisi bhi jawab ko wapas uski wajah tak trace kiya ja sakta hai.',
+    aboutExcluded:'Jaan boojhkar bahar rakha gaya: modern self-help books, CBT workbooks, aur DSM — copyrighted, aur DSM unhe usi diagnosis ki taraf kheenchta jo unhe kabhi nahi deni.',
+    aboutS3Label:'[ jab unhe nahi pata ]',
+    aboutS3:'Agar kuch relevant nahi milta, to jawab seedha hota hai — “iske baare me mere paas achhi guidance nahi hai.” Wo sirf un passages se bolti hain jo retriever ne wakai laaye. Bina citation koi daawa nahi.',
+    aboutS4Label:'[ privacy ]',
+    aboutS4:'Audio kabhi record nahi hota. Transcript aur timing isi device par rehte hain, sirf engineering quality ke liye.',
+    aboutAttribution:'Ek portfolio demonstration — therapy nahi, medical advice nahi, crisis ke liye nahi. Contains public sector information licensed under the Open Government Licence v3.0 (NHS). WHO aur NOBA content CC BY-NC-SA ke tehat, non-commercial. US federal publications public domain hain. Classic texts public domain, Project Gutenberg se.',
+    aboutClose:'Wapas',
+    helpTitle:'Jo log madad kar sakte hain — abhi, free, 24×7',
+    crisisH1:'Aap akele nahi hain.', crisisH2:'Yeh baat ek insaan se honi chahiye — abhi.',
+    crisisBody:'Ek trained insaan sirf ek call door hai. Free, confidential, kisi bhi waqt.',
+    crisisStay:'Saathi yahin hai. Jab bhi baat karni ho, main mil jaungi.',
+    crisisClose:'call dheere se band karein',
+    closeKicker:'[ ek cheez yaad rakhiye ]', closeFarewell:'Jab mann kare, wapas aa jaiye.', closeDone:'theek hai',
+    closeSourcePrefix:'source:', convoTitle:'yeh baatcheet', convoFoot:'unke kisi bhi turn ke chip par tap kijiye — wajah dikhegi',
+    setTitle:'settings', setLangLabel:'[ default bhasha ]', setCaptions:'live captions',
+    setCaptionsSub:'unke aur aapke shabd, jaise aap bolte hain', setPrivacy:'[ privacy ]', setReplay:'welcome note dobara padhein',
+    setAppearance:'[ look ]', themeAuto:'Auto', themeDay:'Din', themeNight:'Raat',
+    appearanceNote:'Auto aapke device ko follow karta hai — raat ko screen dark rehti hai.',
+    themeQueuedNote:'Device ka theme badla — baat khatam hone par Saathi bhi badal jayegi.',
+    status:{ ready:'jab aap taiyaar hon', reaching:'Saathi se jud rahe hain…', connected:'jud gaye — hello boliye',
+      speaking:'Saathi bol rahi hain', listening:'wo sun rahi hain', hearing:'aapko sun rahi hain', thinking:'ek pal —',
+      holding:'bas aapke saath', barged:'aapne bola — wo beech me ruk gayin',
+      dip:'connection gir gaya — jagah bachi hai', back:'wapas aa gayin — boliye',
+      matters:'jo aapne kaha wo important hai — ek pal', ended:'baat dheere se khatam hui',
+      unreachable:'Saathi tak pahunch nahi paye — server chal raha hai?' },
+  },
+  hindi: {
+    sub:'साथी · a companion', help:'किसी से बात करें? / Need a person?', settings:'सेटिंग्स / settings',
+    langDesc:{ hinglish:'हिंदी–English मिक्स · the everyday mix', hindi:'पूरी बातचीत हिंदी में · all in Hindi', english:'साफ़, शांत English · clear English' },
+    seeConvo:'यह बातचीत देखें / see this conversation', end:'खत्म करें / End', worth:'यह आज़माइए · worth trying',
+    start:'बात शुरू करें · Start',
+    try:['“परीक्षा से पहले नींद नहीं आती.” — I haven’t been sleeping before exams.','बीच में टोक दीजिए — वो रुक कर सुनेंगी. Interrupt her; she stops and listens.','“आज मन बहुत भारी है.” — Everything feels heavy today.'],
+    gateKicker:'साथी — a companion', gateH1:'Before we talk,', gateH2:'तीन सीधी बातें.',
+    gateP1Lead:'यह एक portfolio demonstration है.', gateP1:'Saathi therapy नहीं है, न ही medical advice — वो कभी diagnose नहीं करेंगी. This is a demonstration: not therapy, not medical advice, and she will never diagnose you.',
+    gateP2Lead:'यह crisis के लिए नहीं है.', gateP2:'अगर आप खुद को नुकसान पहुँचाने का सोच रहे हैं, तो अभी किसी इंसान से बात कीजिए. If you are thinking of hurting yourself, please talk to a person now — free, 24×7:',
+    gateP3Lead:'Audio कभी record नहीं होता.', gateP3:'Transcript सिर्फ़ इसी device पर रहता है. Transcripts stay on this device, for quality only.',
+    gateCta:'समझ लिया · I understand', gateFootnote:'यह नोट settings में कभी भी दोबारा पढ़ सकते हैं · read it again anytime',
+    moreLangsTitle:'और भाषाएँ · more languages', moreLangsList:'Bangla · Tamil · Marathi · Telugu', soonTag:'soon',
+    aboutCta:'Saathi के बारे में · About', aboutKicker:'यह क्या है · what this is',
+    aboutH1:'रोज़मर्रा के मुश्किल दिनों का साथी.',
+    aboutLead:'Saathi एक voice companion है — तनाव, नींद, परीक्षा की घबराहट, मन न लगना. वो सुनती हैं, जो आपने कहा वो लौटाकर बताती हैं, और एक बार में एक evidence-based तकनीक सिखाती हैं — बोलकर बताते हुए कि वो कहाँ से आई है. She listens, reflects, and teaches one evidence-based technique at a time, naming its source aloud.',
+    aboutS1Label:'[ वो क्या नहीं करेंगी · what she refuses ]',
+    aboutS1:'वो diagnose नहीं करती. दवा की बात नहीं करती. और अगर आप crisis का इशारा दें, तो वो coach बनना ही बंद कर देती हैं — एक fixed code path आपको इंसानी helpline तक पहुँचाता है, कोई search या generation चलने से पहले. A prompt is a request; a gate is a guarantee.',
+    aboutS2Label:'[ guidance कहाँ से आती है · sources ]',
+    aboutS2:'सिर्फ़ curated open-licence sources. हर passage पर उसका source और licence लिखा है, इसलिए किसी भी जवाब को उसकी वजह तक trace किया जा सकता है.',
+    aboutExcluded:'जान-बूझकर बाहर रखा गया: modern self-help books, CBT workbooks, और DSM — copyrighted, और DSM उन्हें उसी diagnosis की तरफ़ खींचता जो उन्हें कभी नहीं देनी.',
+    aboutS3Label:'[ जब उन्हें नहीं पता · when she does not know ]',
+    aboutS3:'अगर कुछ relevant नहीं मिलता, तो जवाब सीधा होता है — “इसके बारे में मेरे पास अच्छी guidance नहीं है.” वो सिर्फ़ उन passages से बोलती हैं जो retriever ने वाकई लाए. No uncited claims.',
+    aboutS4Label:'[ privacy · निजता ]',
+    aboutS4:'Audio कभी record नहीं होता. Transcript और timing इसी device पर रहते हैं, सिर्फ़ engineering quality के लिए.',
+    aboutAttribution:'एक portfolio demonstration — therapy नहीं, medical advice नहीं, crisis के लिए नहीं. Contains public sector information licensed under the Open Government Licence v3.0 (NHS). WHO and NOBA content used under CC BY-NC-SA, non-commercial. US federal publications are public domain. Classic texts are public domain, via Project Gutenberg.',
+    aboutClose:'वापस · Back',
+    helpTitle:'जो लोग मदद कर सकते हैं — अभी, free, 24×7',
+    crisisH1:'आप अकेले नहीं हैं.', crisisH2:'This needs a person — right now.',
+    crisisBody:'एक प्रशिक्षित इंसान सिर्फ़ एक call दूर है. Someone trained is a phone call away — free, confidential, any hour.',
+    crisisStay:'Saathi यहीं है. जब भी बात करनी हो, मैं यहीं मिलूँगी. — I will be here.',
+    crisisClose:'call धीरे से बंद करें · close gently',
+    closeKicker:'[ एक बात याद रखिए · one thing to keep ]',
+    closeFarewell:'फिर मिलेंगे. Come back anytime.', closeDone:'ठीक है · done',
+    closeSourcePrefix:'source:', convoTitle:'यह बातचीत · this conversation', convoFoot:'उनके किसी भी turn के chip पर tap कीजिए — वजह दिखेगी',
+    setTitle:'सेटिंग्स · settings', setLangLabel:'[ default भाषा · language ]', setCaptions:'live captions · लाइव कैप्शन',
+    setCaptionsSub:'उनके और आपके शब्द, बोलते ही · her words and yours', setPrivacy:'[ privacy · निजता ]', setReplay:'welcome note दोबारा पढ़ें',
+    setAppearance:'[ रूप · appearance ]', themeAuto:'Auto', themeDay:'दिन · Day', themeNight:'रात · Night',
+    appearanceNote:'Auto आपके device को follow करता है · follows your device, so late nights stay dark.',
+    themeQueuedNote:'Device का theme बदला — बात खत्म होने पर बदल जाएगा · will switch after this call.',
+    status:{ ready:'जब आप तैयार हों · when you are ready', reaching:'Saathi से जुड़ रहे हैं…', connected:'जुड़ गए — नमस्ते कहिए · connected',
+      speaking:'Saathi बोल रही हैं · speaking', listening:'वो सुन रही हैं · listening', hearing:'आपको सुन रही हैं · hearing you',
+      thinking:'एक पल — · a moment', holding:'बस आपके साथ · here with you',
+      barged:'आपने बोला — वो रुक गईं · she stopped', dip:'कनेक्शन गिरा — जगह बची है · reconnecting',
+      back:'वापस आ गईं — बोलिए · back with you', matters:'जो आपने कहा वो ज़रूरी है · one moment',
+      ended:'बात धीरे से खत्म हुई · call ended',
+      unreachable:'Saathi तक पहुँच नहीं पाए · could not reach the server' },
+  },
+};
+const SOURCES = [
+  ['NIMH · CDC · MedlinePlus', 'US government works — public domain'],
+  ['NHS · Every Mind Matters', 'Open Government Licence v3.0'],
+  ['WHO guidance', 'CC BY-NC-SA 3.0 IGO'],
+  ['NOBA psychology chapters', 'CC BY-NC-SA 4.0'],
+  ['Stoic & contemplative classics', 'public domain'],
+];
+
+function currentLang() {
+  const saved = lsGet('saathi-language');
+  if (languages.some(l => l.id === saved)) return saved;
+  if (COPY[saved]) return saved;
+  const def = languages.find(l => l.default);
+  return def ? def.id : 'hinglish';
+}
+function C() { return COPY[currentLang()] || COPY.hinglish; }
+function capLang() { return currentLang() === 'hindi' ? 'hi' : 'en'; }
+
+/* ================= appearance =================
+   Auto follows the OS. Mid-call the theme is FROZEN: a screen changing
+   underneath someone talking about something hard is jarring — changes
+   queue, a note appears in settings, and the switch lands at session close. */
+const lightMQ = matchMedia('(prefers-color-scheme: light)');
+let themePref = lsGet('saathi-theme') || 'auto';
+if (!['auto', 'day', 'night'].includes(themePref)) themePref = 'auto';
+let frozenTheme = null, themeQueued = false;
+function resolvedTheme() {
+  if (frozenTheme) return frozenTheme;
+  if (themePref === 'auto') return lightMQ.matches ? 'day' : 'night';
+  return themePref;
+}
+function applyThemeAttr(fade) {
+  const html = document.documentElement;
+  if (fade && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    html.classList.add('theme-fading');
+    setTimeout(() => html.classList.remove('theme-fading'), 420);
+  }
+  const target = frozenTheme || (themePref === 'auto' ? null : themePref);
+  if (target) html.setAttribute('data-theme', target);
+  else html.removeAttribute('data-theme');
+}
+function setThemePref(pref) {
+  themePref = pref;
+  lsSet('saathi-theme', pref);
+  themeQueued = false;
+  if (frozenTheme) { themeQueued = pref !== 'auto' ? frozenTheme !== pref : false; }
+  renderAppearance();
+  applyThemeAttr(true);
+}
+function renderAppearance() {
+  const el = $('appearance'), c = C();
+  el.innerHTML = '';
+  for (const [id, label] of [['auto', c.themeAuto], ['day', c.themeDay], ['night', c.themeNight]]) {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(themePref === id));
+    b.onclick = () => setThemePref(id);
+    el.appendChild(b);
+  }
+  $('appearance-note').textContent = c.appearanceNote;
+  $('appearance-note').hidden = themePref !== 'auto';
+  $('theme-queued-note').textContent = c.themeQueuedNote;
+  $('theme-queued-note').hidden = !themeQueued;
+}
+lightMQ.addEventListener('change', () => {
+  if (frozenTheme) { themeQueued = true; renderAppearance(); }
+  else applyThemeAttr(true);
+});
+
+/* ================= status: keys, resolved per language ================= */
+const MODE_STATUS = {
+  idle: 'ready', connecting: 'reaching', listening: 'listening',
+  'user-speaking': 'hearing', thinking: 'thinking', speaking: 'speaking',
+  holding: 'holding', crisis: 'matters',
+};
+let mode = 'idle', statusKey = 'ready';
+function renderStatus() { $('status').textContent = C().status[statusKey] || C().status.ready; }
+function setStatus(key) { statusKey = key; renderStatus(); }
+function setMode(m, key) {
+  if (mode === m && !key) return;
+  mode = m;
+  setStatus(key || MODE_STATUS[m] || 'ready');
 }
 
-// Helplines come from the server so the page and Saathi's spoken handoff can
-// never drift apart.
-fetch('/api/helplines')
-  .then(r => r.json())
-  .then(({ helplines }) => {
-    els.helplines.innerHTML = helplines.map(h => {
-      const extra = [h.alt && `alt ${h.alt}`, h.web].filter(Boolean).join(' · ');
-      return `<li><strong>${h.name}</strong> — ${h.phone}${extra ? ' (' + extra + ')' : ''}</li>`;
-    }).join('');
-  })
-  .catch(() => { els.helplines.innerHTML = '<li>Could not load helplines — check the server log.</li>'; });
-
-async function flushCandidates() {
-  if (!pcId || pendingCandidates.length === 0) return;
-  const candidates = pendingCandidates.splice(0);
-  try {
-    await fetch('/api/offer', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pc_id: pcId, candidates }),
-    });
-  } catch (err) { console.warn('ICE patch failed', err); }
+/* ================= presence: the aurora engine =================
+   Real mic/bot RMS drives the waves (better than a synthetic envelope);
+   the parameters, emotion modifiers and palette are the finalised design.
+   Day mode composites with 'multiply' — pigment darkens the bone ground;
+   'lighter' washes out to a grey disc on pale backgrounds. */
+const PARAMS = {
+  idle:            { amp:.25, breath:1/7,   glow:.3,  warmth:.15, dim:.55, gather:0,   speed:.45, lean:0 },
+  connecting:      { amp:.5,  breath:1/4.5, glow:.5,  warmth:.2,  dim:.75, gather:.6,  speed:.9,  lean:0 },
+  listening:       { amp:.55, breath:1/6,   glow:.65, warmth:.25, dim:1,   gather:0,   speed:.7,  lean:0 },
+  'user-speaking': { amp:.8,  breath:1/5,   glow:.8,  warmth:.25, dim:1,   gather:.05, speed:.95, lean:1 },
+  thinking:        { amp:.35, breath:1/5,   glow:.55, warmth:.3,  dim:.9,  gather:.85, speed:1.1, lean:0 },
+  speaking:        { amp:1,   breath:1/5,   glow:1,   warmth:.35, dim:1,   gather:0,   speed:.95, lean:0 },
+  holding:         { amp:.5,  breath:1/6.5, glow:.5,  warmth:.65, dim:.8,  gather:.2,  speed:.5,  lean:0 },
+  crisis:          { amp:.28, breath:1/8,   glow:.45, warmth:1,   dim:.7,  gather:.3,  speed:.28, lean:0 },
+};
+/* Emotion modifiers, scaled by intensity: anxious tightens and quickens,
+   overwhelmed thickens and slows, low dims and warms. */
+const EMOS = {
+  neutral:     { tension:0,  weight:0,  warm:0,   dimMul:1,   speedMul:1 },
+  anxious:     { tension:.8, weight:.1, warm:-.1, dimMul:1,   speedMul:1.3 },
+  overwhelmed: { tension:.5, weight:.8, warm:.1,  dimMul:.88, speedMul:.85 },
+  low:         { tension:.1, weight:.3, warm:.5,  dimMul:.72, speedMul:.65 },
+};
+let emoCur = { ...EMOS.neutral }, emoTgt = { ...EMOS.neutral };
+function setEmotion(name, intensity) {
+  const base = EMOS[name] || EMOS.neutral, k = intensity == null ? 0.5 : intensity;
+  emoTgt = { tension: base.tension * k, weight: base.weight * k, warm: base.warm * k,
+             dimMul: 1 + (base.dimMul - 1) * k, speedMul: 1 + (base.speedMul - 1) * k };
 }
 
-async function start() {
-  els.start.disabled = true;
-  setStatus('Asking for your microphone…');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cv = $('presence'), ctx2d = cv.getContext('2d');
+const CS = 520, CCX = 260, CCY = 260, CR = 232;
+{
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = CS * dpr; cv.height = CS * dpr; ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+let cur = { ...PARAMS.idle }, t = 0, last = performance.now();
+let themeMix = resolvedTheme() === 'day' ? 1 : 0;   // 0 night → 1 day, ~600ms morph
+
+function rms(analyser, buf) {
+  if (!analyser) return 0;
+  analyser.getByteTimeDomainData(buf);
+  let s = 0;
+  for (let i = 0; i < buf.length; i++) { const d = (buf[i] - 128) / 128; s += d * d; }
+  return Math.sqrt(s / buf.length);
+}
+const micBuf = new Uint8Array(512), botBuf = new Uint8Array(512);
+let micLevel = 0, botLevel = 0, lastBotAudio = 0, lastMicAudio = 0;
+let eSmooth = 0;
+function follow(curV, target, dt, attack, release) {
+  const tc = target > curV ? attack : release;
+  return curV + (target - curV) * (1 - Math.exp(-dt / tc));
+}
+function mix3(a, b, m) { return [a[0]+(b[0]-a[0])*m, a[1]+(b[1]-a[1])*m, a[2]+(b[2]-a[2])*m]; }
+
+function draw() {
+  const m = Math.max(0, Math.min(1, themeMix)), light = m > 0.5;
+  const p = cur, em = emoCur;
+  const e = eSmooth * p.amp;
+  const breath = Math.sin(t * Math.PI * 2 * p.breath) * .5 + .5;
+  const pulse = reduced ? (0.75 + 0.25 * Math.sin(performance.now() * 0.0005)) : 1;
+  const BG = mix3([14,15,18], [244,244,242], m).map(v => Math.round(v));
+  ctx2d.globalCompositeOperation = 'source-over';
+  ctx2d.fillStyle = 'rgb(' + BG[0] + ',' + BG[1] + ',' + BG[2] + ')';
+  ctx2d.fillRect(0, 0, CS, CS);
+  const lf = mix3([44,47,54], [208,208,203], m).map(v => Math.round(v));
+  const lift = 'rgba(' + lf[0] + ',' + lf[1] + ',' + lf[2] + ',';
+  const liftMul = 1 - 0.78 * m;   // backing halo cut by day: multiply needs a clean ground
+  const bg = ctx2d.createRadialGradient(CCX, CCY, 0, CCX, CCY, CR);
+  bg.addColorStop(0, lift + (0.5 * p.dim * liftMul).toFixed(3) + ')');
+  bg.addColorStop(1, lift + '0)');
+  ctx2d.fillStyle = bg; ctx2d.beginPath(); ctx2d.arc(CCX, CCY, CR, 0, 7); ctx2d.fill();
+  ctx2d.save();
+  ctx2d.beginPath(); ctx2d.arc(CCX, CCY, CR, 0, 7); ctx2d.clip();
+  ctx2d.globalCompositeOperation = light ? 'multiply' : 'lighter';
+  const bandA = mix3([143,211,193], [16,94,76], m);
+  const bandB = mix3([232,201,122], [140,98,16], m);
+  const ivory = mix3([226,231,245], [56,68,102], m);
+  const warmth = Math.max(0, Math.min(1, p.warmth + em.warm));
+  for (let b = 0; b < 3; b++) {
+    const spread = (b - 1) * (34 + 30 * p.amp) * (1 - p.gather * .8) * (1 - em.tension * .4);
+    const A1 = (24 + b * 10) * (.45 + p.amp * .55) * (1 + e * .9) * (.8 + breath * .35)
+               * (1 - p.gather * .5) * (1 + em.tension * .25);
+    ctx2d.beginPath();
+    for (let x = CCX - CR; x <= CCX + CR; x += 6) {
+      const y = CCY + spread
+        + Math.sin(x * .014 + t * (.5 + b * .21) + b * 2.1) * A1
+        + Math.sin(x * .029 - t * .37 + b) * A1 * .45
+        + p.lean * 24;
+      if (x === CCX - CR) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y);
+    }
+    const colA = mix3(bandA, bandB, Math.min(1, warmth + b * .18));
+    const colB = mix3(ivory, colA, .82);
+    const alDark = (.09 + .13 * p.glow) * p.dim * em.dimMul * pulse * 1.6;
+    const alDay = Math.min(.60, (.46 + .28 * p.glow) * (.62 + .38 * p.dim) * em.dimMul * pulse);
+    const al = alDark + (alDay - alDark) * m;
+    const grad = ctx2d.createLinearGradient(CCX - CR, 0, CCX + CR, 0);
+    grad.addColorStop(0, 'rgba(' + (colA[0]|0) + ',' + (colA[1]|0) + ',' + (colA[2]|0) + ',0)');
+    grad.addColorStop(.5, 'rgba(' + (colB[0]|0) + ',' + (colB[1]|0) + ',' + (colB[2]|0) + ',' + al.toFixed(3) + ')');
+    grad.addColorStop(1, 'rgba(' + (colA[0]|0) + ',' + (colA[1]|0) + ',' + (colA[2]|0) + ',0)');
+    ctx2d.strokeStyle = grad;
+    ctx2d.lineWidth = 46 + e * 34 + b * 7 + em.weight * 26;
+    ctx2d.lineCap = 'round';
+    ctx2d.shadowColor = 'rgba(' + (colA[0]|0) + ',' + (colA[1]|0) + ',' + (colA[2]|0) + ',' + al.toFixed(3) + ')';
+    ctx2d.shadowBlur = 38;
+    ctx2d.stroke();
+  }
+  ctx2d.restore();
+  ctx2d.shadowBlur = 0;
+  ctx2d.globalCompositeOperation = 'source-over';
+  const v = ctx2d.createRadialGradient(CCX, CCY, CR * .72, CCX, CCY, CR);
+  v.addColorStop(0, 'rgba(' + BG[0] + ',' + BG[1] + ',' + BG[2] + ',0)');
+  v.addColorStop(1, 'rgba(' + BG[0] + ',' + BG[1] + ',' + BG[2] + ',0.92)');
+  ctx2d.fillStyle = v; ctx2d.beginPath(); ctx2d.arc(CCX, CCY, CR + 2, 0, 7); ctx2d.fill();
+  ctx2d.strokeStyle = light ? 'rgba(20,22,26,0.10)' : 'rgba(255,255,255,0.07)';
+  ctx2d.lineWidth = 1; ctx2d.beginPath(); ctx2d.arc(CCX, CCY, CR, 0, 7); ctx2d.stroke();
+}
+
+function loop(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  micLevel = rms(micAnalyser, micBuf); botLevel = rms(botAnalyser, botBuf);
+  const rawE = Math.min(1, (mode === 'user-speaking' ? micLevel : botLevel) * 6);
+  eSmooth = follow(eSmooth, rawE, dt, 0.09, 0.45);
+  const nowMs = performance.now();
+  if (botLevel > .015) lastBotAudio = nowMs;
+  if (micLevel > .03) lastMicAudio = nowMs;
+
+  if (connected && latestMode !== 'crisis') {
+    const botLive = nowMs - lastBotAudio < 350;
+    const micLive = nowMs - lastMicAudio < 300;
+    if (botLive && mode !== 'user-speaking') setMode(latestMode === 'hold' ? 'holding' : 'speaking');
+    else if (micLive && mode !== 'user-speaking') {
+      // barge-in: she was mid-sentence and you spoke — she stops
+      if (mode === 'speaking' || mode === 'holding') { markBotCut(); setMode('user-speaking', 'barged'); }
+      else setMode('user-speaking');
+    }
+    else if (!micLive && mode === 'user-speaking') setMode('thinking');
+    else if (!botLive && (mode === 'speaking' || mode === 'holding')) setMode('listening');
+    else if (mode === 'thinking' && nowMs - lastMicAudio > 6000) setMode('listening');
+    else if (mode === 'connecting') setMode('listening');
+  }
+  const tgt = PARAMS[mode] || PARAMS.idle, k = 1 - Math.exp(-dt * 4.2);
+  for (const key in tgt) cur[key] += (tgt[key] - cur[key]) * k;
+  const ke = 1 - Math.exp(-dt * 2.2);
+  for (const key in emoTgt) emoCur[key] += (emoTgt[key] - emoCur[key]) * ke;
+  const tmTgt = resolvedTheme() === 'day' ? 1 : 0;
+  const km = reduced ? 1 : 1 - Math.exp(-dt / .6);
+  themeMix += (tmTgt - themeMix) * km;
+  t += dt * cur.speed * emoCur.speedMul * (reduced ? .05 : 1);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ================= copy application ================= */
+function renderLangs() {
+  const el = $('langs');
+  el.innerHTML = '';
+  for (const l of languages) {
+    const b = document.createElement('button');
+    b.textContent = l.label;
+    b.setAttribute('lang', 'hi');
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(l.id === currentLang()));
+    b.onclick = () => { lsSet('saathi-language', l.id); applyCopy(); };
+    el.appendChild(b);
+  }
+  const chosen = languages.find(l => l.id === currentLang());
+  $('lang-tag').textContent = chosen ? chosen.tagline : '';
+  $('lang-tag').setAttribute('lang', capLang());
+}
+function renderLangRows() {
+  const el = $('langs-settings'), c = C();
+  el.innerHTML = '';
+  for (const l of languages) {
+    const on = l.id === currentLang();
+    const b = document.createElement('button');
+    b.className = 'langrow' + (on ? ' on' : '');
+    b.setAttribute('lang', 'hi');
+    b.innerHTML = '<span><span class="t">' + esc(l.label) + '</span><span class="d">' +
+      esc((c.langDesc || {})[l.id] || '') + '</span></span><span class="radio"></span>';
+    b.onclick = () => { lsSet('saathi-language', l.id); applyCopy(); };
+    el.appendChild(b);
+  }
+}
+function renderHelplines() {
+  const rows = helplines.map(h => {
+    const parts = String(h.name).split(' (');
+    const nm = parts[0], sub = parts[1] ? parts[1].replace(/\)$/, '') : '';
+    return { nm, sub, phone: h.phone, tel: 'tel:' + String(h.phone).replace(/[^\d+]/g, '') };
+  });
+  $('gate-helplines').innerHTML = rows.map(r =>
+    '<a href="' + r.tel + '"><span><span class="nm">' + esc(r.nm) + '</span>' +
+    (r.sub ? '<span class="sub">' + esc(r.sub) + '</span>' : '') + '</span>' +
+    '<span class="ph">' + esc(r.phone) + '</span></a>').join('');
+  $('helpline-list').innerHTML = rows.map(r =>
+    '<a class="helprow" href="' + r.tel + '"><span><span class="nm">' + esc(r.nm) + '</span>' +
+    (r.sub ? '<span class="sub">' + esc(r.sub) + '</span>' : '') + '</span>' +
+    '<span class="ph">' + esc(r.phone) + '</span></a>').join('');
+  // crisis: first number is the anchor, second sits beside it, the rest are quiet links
+  let html = '';
+  if (rows[0]) html += '<a class="call-primary" href="' + rows[0].tel + '"><b>Call ' +
+    esc(rows[0].phone) + '</b><span>' + esc(rows[0].nm + (rows[0].sub ? ' · ' + rows[0].sub : '')) + '</span></a>';
+  if (rows[1]) html += '<a class="call-secondary" href="' + rows[1].tel + '"><b>Call ' +
+    esc(rows[1].nm) + ' — ' + esc(rows[1].phone) + '</b><span>' + esc(rows[1].sub || '') + '</span></a>';
+  if (rows.length > 2) html += '<div class="call-tertiary">' + rows.slice(2).map(r =>
+    '<a href="' + r.tel + '">' + esc(r.nm) + ' ' + esc(r.phone) + '</a>').join('') + '</div>';
+  $('crisis-calls').innerHTML = html;
+}
+function applyCopy() {
+  const c = C(), lang = capLang();
+  document.documentElement.setAttribute('lang', lang);
+  $('wordmark-sub').textContent = c.sub;
+  $('need-person').textContent = c.help;
+  $('open-settings').textContent = c.settings;
+  $('worth-label').textContent = '[ ' + c.worth + ' ]';
+  $('trylines').innerHTML = c.try.map(x =>
+    '<div class="tryline" lang="' + lang + '">' + esc(x) + '</div>').join('');
+  $('start').textContent = c.start;
+  $('start').setAttribute('lang', lang);
+  $('transcript-open').textContent = c.seeConvo;
+  $('end').textContent = c.end;
+  // gate
+  $('gate-kicker').textContent = c.gateKicker;
+  $('gate-h1').innerHTML = esc(c.gateH1) + '<br>' + esc(c.gateH2);
+  $('gate-h1').setAttribute('lang', lang);
+  $('gate-p1-lead').textContent = c.gateP1Lead; $('gate-p1').textContent = c.gateP1;
+  $('gate-p2-lead').textContent = c.gateP2Lead; $('gate-p2').textContent = c.gateP2;
+  $('gate-p3-lead').textContent = c.gateP3Lead; $('gate-p3').textContent = c.gateP3;
+  $('consent').textContent = c.gateCta;
+  $('gate-footnote').textContent = c.gateFootnote;
+  // about
+  $('about-kicker').textContent = c.aboutKicker;
+  $('about-h1').textContent = c.aboutH1; $('about-h1').setAttribute('lang', lang);
+  $('about-lead').textContent = c.aboutLead;
+  $('about-s1-label').textContent = c.aboutS1Label; $('about-s1').textContent = c.aboutS1;
+  $('about-s2-label').textContent = c.aboutS2Label; $('about-s2').textContent = c.aboutS2;
+  $('about-excluded').textContent = c.aboutExcluded;
+  $('about-s3-label').textContent = c.aboutS3Label; $('about-s3').textContent = c.aboutS3;
+  $('about-s4-label').textContent = c.aboutS4Label; $('about-s4').textContent = c.aboutS4;
+  $('about-attribution').textContent = c.aboutAttribution;
+  $('about-close').textContent = c.aboutClose;
+  $('about-sources').innerHTML = SOURCES.map(([n, l]) =>
+    '<div class="rowline"><b>' + esc(n) + '</b><span>' + esc(l) + '</span></div>').join('');
+  // helplines / crisis / close
+  $('help-title').textContent = c.helpTitle;
+  $('crisis-h1').innerHTML = esc(c.crisisH1) + '<br>' + esc(c.crisisH2);
+  $('crisis-body').textContent = c.crisisBody;
+  $('crisis-stay').textContent = c.crisisStay;
+  $('crisis-close').textContent = c.crisisClose;
+  $('close-kicker').textContent = c.closeKicker;
+  $('close-farewell').textContent = c.closeFarewell;
+  $('close-done').textContent = c.closeDone;
+  // settings
+  $('set-title').textContent = c.setTitle;
+  $('set-lang-label').textContent = c.setLangLabel;
+  $('morelang-title').textContent = c.moreLangsTitle;
+  $('morelang-list').textContent = c.moreLangsList;
+  $('soon-tag').textContent = c.soonTag;
+  $('set-appearance-label').textContent = c.setAppearance;
+  $('set-cc-title').textContent = c.setCaptions;
+  $('set-cc-sub').textContent = c.setCaptionsSub;
+  $('set-privacy-label').textContent = c.setPrivacy;
+  $('reopen-gate').textContent = c.setReplay;
+  $('open-about').textContent = c.aboutCta;
+  $('convo-title').textContent = c.convoTitle;
+  $('convo-foot').textContent = c.convoFoot;
+  renderStatus();
+  renderLangs();
+  renderLangRows();
+  renderAppearance();
+}
+
+fetch('/api/languages').then(r => r.json()).then(d => { languages = d.languages; applyCopy(); });
+fetch('/api/helplines').then(r => r.json()).then(d => { helplines = d.helplines; renderHelplines(); });
+applyCopy();
+applyThemeAttr(false);
+
+/* ================= consent gate: FAILS OPEN =================
+   gateOpen starts true; only confirmed stored consent closes it. If storage
+   throws (sandboxed/private contexts), the safety screen still shows. */
+let gateOpen = true;
+try { if (localStorage.getItem('saathi-consent-v1')) gateOpen = false; } catch (e) {}
+if (gateOpen) $('gate').classList.add('open');
+$('consent').onclick = () => {
+  lsSet('saathi-consent-v1', '1');
+  $('gate').classList.remove('open');
+};
+$('reopen-gate').onclick = () => { closeDrawer('settings'); $('gate').classList.add('open'); };
+
+/* about */
+$('open-about').onclick = () => { closeDrawer('settings'); $('about').classList.add('open'); };
+$('about-close').onclick = () => { $('about').classList.remove('open'); openDrawer('settings'); };
+
+/* ================= mic permission flow ================= */
+$('start').onclick = () => {
+  if (everGranted) { begin(); return; }
+  $('mic-ask').hidden = false; $('mic-denied').hidden = true;
+  $('mic-card').classList.add('open');
+};
+$('mic-allow').onclick = () => { $('mic-card').classList.remove('open'); begin(); };
+$('mic-cancel').onclick = () => $('mic-card').classList.remove('open');
+$('mic-retry').onclick = () => { $('mic-card').classList.remove('open'); begin(); };
+$('mic-denied-close').onclick = () => $('mic-card').classList.remove('open');
+
+/* ================= call lifecycle ================= */
+async function begin() {
+  $('start').disabled = true;
+  frozenTheme = resolvedTheme();   // no theme flips mid-call
+  applyThemeAttr(false);
+  setMode('connecting');
   try {
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
+    everGranted = true; lsSet('saathi-mic-ok', '1');
   } catch (err) {
-    setStatus('Microphone permission denied', 'error');
-    els.start.disabled = false;
+    $('start').disabled = false; setMode('idle');
+    $('mic-ask').hidden = true; $('mic-denied').hidden = false;
+    $('mic-card').classList.add('open');
     return;
   }
 
-  setStatus('Connecting…');
+  audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  micAnalyser = audioCtx.createAnalyser(); micAnalyser.fftSize = 512;
+  audioCtx.createMediaStreamSource(micStream).connect(micAnalyser);
+
   pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  // The data channel carries live captions (and future server events). Created
+  // client-side so the server's channel wait never times out.
+  dataChannel = pc.createDataChannel('saathi-events');
+  dataChannel.onopen = () => { liveCaptions = true; };
+  dataChannel.onclose = () => { liveCaptions = false; };
+  dataChannel.onmessage = (ev) => {
+    let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
+    if (msg && msg.type === 'caption') onCaption(msg);
+  };
+  micStream.getTracks().forEach(tk => pc.addTransceiver(tk, { direction: 'sendrecv' }));
 
-  // sendrecv, not sendonly: SmallWebRTCTransport expects a bidirectional
-  // audio transceiver so it has somewhere to put Saathi's voice.
-  micStream.getTracks().forEach(track => pc.addTransceiver(track, { direction: 'sendrecv' }));
-
-  pc.ontrack = event => { els.audio.srcObject = event.streams[0]; };
-
-  pc.onicecandidate = event => {
-    if (!event.candidate) return;
+  pc.ontrack = (ev) => {
+    $('bot-audio').srcObject = ev.streams[0];
+    botAnalyser = audioCtx.createAnalyser(); botAnalyser.fftSize = 512;
+    audioCtx.createMediaStreamSource(ev.streams[0]).connect(botAnalyser);
+  };
+  pc.onicecandidate = (ev) => {
+    if (!ev.candidate) return;
     pendingCandidates.push({
-      candidate: event.candidate.candidate,
-      sdp_mid: event.candidate.sdpMid,
-      sdp_mline_index: event.candidate.sdpMLineIndex,
+      candidate: ev.candidate.candidate, sdp_mid: ev.candidate.sdpMid,
+      sdp_mline_index: ev.candidate.sdpMLineIndex,
     });
     flushCandidates();
   };
-
   pc.onconnectionstatechange = () => {
-    const state = pc.connectionState;
-    if (state === 'connected') { setStatus('Connected — say hello', 'live'); els.stop.disabled = false; }
-    else if (state === 'connecting') setStatus('Connecting…');
-    else if (state === 'failed') { setStatus('Connection failed', 'error'); stop(); }
-    else if (state === 'disconnected' || state === 'closed') setStatus('Not connected');
+    const s = pc && pc.connectionState;
+    if (s === 'connected') {
+      connected = true; latestMode = null;
+      setMode('listening', 'connected');
+      $('precall').hidden = true; $('incall').hidden = false;
+      startPolling();
+    } else if (s === 'failed' || s === 'disconnected' || s === 'closed') {
+      if (connected) endCall(true);
+    }
   };
 
   try {
     await pc.setLocalDescription(await pc.createOffer());
-    const response = await fetch('/api/offer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type }),
+    const res = await fetch('/api/offer', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sdp: pc.localDescription.sdp, type: pc.localDescription.type,
+        request_data: {
+          language: currentLang(), device_id: deviceId,
+          remember: $('remember').checked,
+        },
+      }),
     });
-    if (!response.ok) throw new Error(`server returned ${response.status}`);
-    const answer = await response.json();
+    if (!res.ok) throw new Error('offer failed: ' + res.status);
+    const answer = await res.json();
     pcId = answer.pc_id;
     await pc.setRemoteDescription(answer);
     await flushCandidates();
   } catch (err) {
     console.error(err);
-    setStatus('Could not reach Saathi — is the server running?', 'error');
-    stop();
+    setStatus('unreachable');
+    endCall(true);
   }
 }
+async function flushCandidates() {
+  if (!pcId || !pendingCandidates.length) return;
+  const candidates = pendingCandidates.splice(0);
+  try {
+    await fetch('/api/offer', { method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pc_id: pcId, candidates }) });
+  } catch (e) {}
+}
+function endCall(silent) {
+  const hadCall = connected;
+  connected = false;
+  if (pc) { try { pc.close(); } catch (e) {} pc = null; }
+  if (micStream) { micStream.getTracks().forEach(tk => tk.stop()); micStream = null; }
+  micAnalyser = null; botAnalyser = null; pcId = null; pendingCandidates = [];
+  dataChannel = null; liveCaptions = false;
+  $('captions').hidden = true; $('cap-bot').textContent = ''; $('cap-you').textContent = '';
+  $('bot-audio').srcObject = null;
+  $('incall').hidden = true; $('precall').hidden = false;
+  $('start').disabled = false;
+  stopPolling();
+  setEmotion('neutral', 0);
+  setMode('idle', hadCall ? 'ended' : 'ready');
+  frozenTheme = null; themeQueued = false;   // queued appearance changes land now
+  renderAppearance();
+  applyThemeAttr(true);
+  if (!silent) setTimeout(() => { poll().then(showCloseCard); }, 1500);
+  setTimeout(refreshForget, 5000);           // a profile may exist after the update
+}
+$('end').onclick = () => endCall(false);
+addEventListener('beforeunload', () => endCall(true));
 
-function stop() {
-  if (pc) { pc.close(); pc = null; }
-  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
-  pcId = null; pendingCandidates = [];
-  els.audio.srcObject = null;
-  els.start.disabled = false;
-  els.stop.disabled = true;
-  setStatus('Not connected');
+/* session close: one thing to keep — the last technique she actually cited.
+   Real data only; if no guide turn cited anything, no card. */
+function showCloseCard() {
+  if (turns.some(x => x.mode === 'crisis')) return;
+  const guided = turns.filter(x => x.mode === 'guide' && (x.passages || []).length);
+  if (!guided.length) return;
+  const p = guided[guided.length - 1].passages[0];
+  $('close-technique').textContent = p.title || '';
+  $('close-source').textContent = C().closeSourcePrefix + ' ' + (p.source || '');
+  $('close-card').classList.add('open');
+}
+$('close-done').onclick = () => $('close-card').classList.remove('open');
+
+/* ================= session polling: transcript + insight + crisis ========= */
+async function poll() {
+  try {
+    const d = await (await fetch('/api/sessions/latest')).json();
+    turns = d.turns || []; utterances = d.utterances || [];
+    const lastTurn = turns[turns.length - 1];
+    latestMode = lastTurn ? lastTurn.mode : null;
+    if (lastTurn && lastTurn.emotion) setEmotion(lastTurn.emotion, lastTurn.intensity);
+    if (latestMode === 'crisis' && connected) { setMode('crisis'); $('crisis').classList.add('open'); }
+    renderTranscript(); renderCaptionsFallback();
+  } catch (e) {}
+}
+function startPolling() { poll(); pollTimer = setInterval(poll, 2500); }
+function stopPolling() { clearInterval(pollTimer); pollTimer = null; }
+$('crisis-close').onclick = () => { $('crisis').classList.remove('open'); endCall(true); };
+
+function modeChip(turn) {
+  if (!turn) return '';
+  let dot = 'var(--dim)', label = 'company';
+  if (turn.mode === 'guide') {
+    const src = ((turn.passages && turn.passages[0] && turn.passages[0].source) || '').split(' (')[0];
+    dot = 'var(--accent)'; label = 'guide' + (src ? ' · ' + esc(src) : '');
+  } else if (turn.mode === 'hold') { dot = 'var(--ink-3)'; label = 'hold · no retrieval'; }
+  else if (turn.mode === 'crisis') { dot = 'var(--ember)'; label = 'crisis handoff'; }
+  return '<button class="chip" data-turn="' + turn.turn + '">' +
+         '<span class="dot" style="background:' + dot + '"></span>' + label + '</button>';
+}
+function renderTranscript() {
+  const body = $('transcript-body');
+  if (!utterances.length) { body.innerHTML = '<p class="hint">Nothing yet — say hello.</p>'; return; }
+  let html = '', turnIdx = 0;
+  for (const u of utterances) {
+    if (u.role === 'user') {
+      turnIdx += 1;
+      html += '<div class="msg you" lang="' + capLang() + '">' + esc(u.text) + '</div>';
+    } else {
+      const turn = turns.find(x => x.turn === turnIdx);
+      html += '<div class="msg bot" lang="' + capLang() + '">' + esc(u.text) +
+              (turn ? '<br>' + modeChip(turn) : '') + '</div>';
+    }
+  }
+  const stick = body.scrollHeight - body.scrollTop - body.clientHeight < 80;
+  body.innerHTML = html;
+  if (stick) body.scrollTop = body.scrollHeight;
+  body.querySelectorAll('.chip').forEach(c =>
+    c.addEventListener('click', () => openInsight(Number(c.dataset.turn))));
 }
 
-els.start.addEventListener('click', start);
-els.stop.addEventListener('click', stop);
-window.addEventListener('beforeunload', stop);
+/* ================= live captions =================
+   Her words land one at a time with a 5px rise; your interim text is italic
+   and solidifies on final; the block fades after 6s of silence. On barge-in
+   her line gains a trailing — at the cut. */
+let botLineDone = false, capFadeTimer = null;
+function ccOn() { return $('cc').getAttribute('aria-pressed') === 'true'; }
+function showCaptions() {
+  clearTimeout(capFadeTimer);
+  $('captions').classList.remove('fadeout');
+  $('captions').hidden = !ccOn() || !connected;
+}
+function scheduleCaptionFade() {
+  clearTimeout(capFadeTimer);
+  capFadeTimer = setTimeout(() => $('captions').classList.add('fadeout'), 6000);
+}
+function markBotCut() {
+  const line = $('cap-bot');
+  if (!line.textContent || botLineDone) return;
+  const span = document.createElement('span');
+  span.className = 'w in'; span.textContent = '—';
+  line.appendChild(span);
+  botLineDone = true;
+}
+function onCaption(msg) {
+  if (!ccOn() || !connected) return;
+  showCaptions();
+  if (msg.role === 'user') {
+    if (msg.text != null) {
+      $('cap-you').textContent = msg.text;
+      $('cap-you').className = 'you ' + (msg.final ? 'final' : 'interim');
+      $('cap-you').setAttribute('lang', capLang());
+    }
+    if (msg.final) scheduleCaptionFade();
+  } else {
+    const line = $('cap-bot');
+    if (msg.reset || (botLineDone && msg.word)) {
+      line.textContent = ''; botLineDone = false;
+      $('cap-you').textContent = '';
+    }
+    if (msg.word) {
+      const span = document.createElement('span');
+      span.className = 'w'; span.textContent = msg.word;
+      line.setAttribute('lang', capLang());
+      line.appendChild(span);
+      requestAnimationFrame(() => span.classList.add('in'));
+      while (line.childNodes.length > 60) line.removeChild(line.firstChild);
+    }
+    if (msg.final) { botLineDone = true; scheduleCaptionFade(); }
+  }
+}
+function renderCaptionsFallback() {
+  // no data channel: last finals from the poll
+  if (liveCaptions) return;
+  if (!ccOn() || !connected) { $('captions').hidden = true; return; }
+  let lastBot = null, lastYou = null;
+  for (const u of utterances) {
+    if (u.role === 'bot') lastBot = u.text; else lastYou = u.text;
+  }
+  $('cap-bot').textContent = lastBot || '';
+  $('cap-you').textContent = lastYou || '';
+  showCaptions();
+}
+
+/* ================= insight drawer ================= */
+function openInsight(n) {
+  const turn = turns.find(x => x.turn === n);
+  if (!turn) return;
+  const spec = turn.speculative_hit ? '<span class="badge spec">spec hit</span>' : '';
+  const intensity = turn.intensity == null ? 0 : turn.intensity;
+  const confidence = turn.confidence == null ? 0 : turn.confidence;
+  let html =
+    '<section><span class="badge ' + esc(turn.mode) + '">' + esc(turn.mode) + '</span>' + spec + '</section>' +
+    '<section><span class="label">[ turn plan ]</span>' +
+      ((turn.plan_notes || []).map(nt => '<p class="plan-note">' + esc(nt) + '</p>').join('') ||
+       '<p class="plan-note">Answer them well.</p>') + '</section>' +
+    '<section><span class="label">[ emotion read ]</span>' +
+      '<div class="emotion-line"><b>' + esc(turn.emotion || 'neutral') + '</b>' +
+      '<div class="meter"><i style="left:' + Math.round(intensity * 100) + '%"></i></div>' +
+      '<small>intensity ' + intensity.toFixed(1) + ' · conf ' + confidence.toFixed(2) + '</small>' +
+      '</div></section>' +
+    '<section><span class="label">[ what she searched ]</span>' +
+      '<div class="qraw" lang="' + capLang() + '">“' + esc(turn.user_text || '') + '”</div>' +
+      '<div class="qarrow">rewritten with dialogue context</div>' +
+      '<div class="qnew">“' + esc(turn.query || '') + '”</div></section>';
+  if ((turn.passages || []).length) {
+    html += '<section><span class="label">[ passages she read ]</span>' +
+      turn.passages.map(p =>
+        '<div class="passage"><div class="top"><b>' + esc(p.title || '') + '</b>' +
+        '<span class="src">' + esc(p.source || '') + '</span></div>' +
+        '<p>' + esc(p.preview || '') + '</p>' +
+        '<div class="lanes">' + ['semantic', 'lexical', 'emotion']
+          .filter(l => p.lanes && p.lanes[l])
+          .map(l => l + ' <b>#' + p.lanes[l].rank + '</b>').join(' ') + '</div></div>'
+      ).join('') + '</section>';
+  } else {
+    html += '<section><span class="label">[ no passages — she just listened ]</span></section>';
+  }
+  html += '<section><span class="label">[ timings ]</span><div class="timings">' +
+    '<span>understand ' + Math.round(turn.understand_ms || 0) + 'ms' +
+      (turn.speculative_hit ? ' ⚡' : '') + '</span>' +
+    '<span>retrieve ' + Math.round(turn.retrieve_ms || 0) + 'ms</span>' +
+    '</div></section>';
+  $('insight-body').innerHTML = html;
+  openDrawer('insight');
+}
+
+/* ================= drawers / modals plumbing ================= */
+function openDrawer(id) { $(id).classList.add('open'); $(id + '-scrim').classList.add('open'); }
+function closeDrawer(id) { $(id).classList.remove('open'); $(id + '-scrim').classList.remove('open'); }
+$('open-settings').onclick = () => openDrawer('settings');
+$('settings-close').onclick = () => closeDrawer('settings');
+$('settings-scrim').onclick = () => closeDrawer('settings');
+$('transcript-open').onclick = () => openDrawer('transcript');
+$('transcript-close').onclick = () => closeDrawer('transcript');
+$('transcript-scrim').onclick = () => closeDrawer('transcript');
+$('insight-close').onclick = () => closeDrawer('insight');
+$('insight-scrim').onclick = () => closeDrawer('insight');
+$('need-person').onclick = () => $('helplines-modal').classList.add('open');
+$('helplines-close').onclick = () => $('helplines-modal').classList.remove('open');
+addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  ['settings', 'transcript', 'insight'].forEach(closeDrawer);
+  ['helplines-modal', 'mic-card', 'close-card'].forEach(id => $(id).classList.remove('open'));
+  $('about').classList.remove('open');
+});
+
+/* ================= captions + remember toggles ================= */
+function setCaptions(on) {
+  $('cc').setAttribute('aria-pressed', String(on));
+  $('cc-settings').checked = on;
+  lsSet('saathi-cc', on ? '1' : '0');
+  renderCaptionsFallback();
+  if (!on) $('captions').hidden = true;
+}
+$('cc').onclick = () => setCaptions($('cc').getAttribute('aria-pressed') !== 'true');
+$('cc-settings').onchange = () => setCaptions($('cc-settings').checked);
+setCaptions(lsGet('saathi-cc') !== '0');   // captions on by default
+
+$('remember').checked = lsGet('saathi-remember') === '1';
+$('remember').onchange = () => lsSet('saathi-remember', $('remember').checked ? '1' : '0');
+function refreshForget() {
+  fetch('/api/profile?device_id=' + deviceId).then(r => r.json())
+    .then(d => { $('forget').hidden = !d.exists; }).catch(() => {});
+}
+refreshForget();
+$('forget').onclick = () =>
+  fetch('/api/profile?device_id=' + deviceId, { method: 'DELETE' })
+    .then(() => { $('forget').hidden = true; });
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 </script>
 </body>
 </html>

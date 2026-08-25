@@ -10,13 +10,6 @@ Speech SDK) installs cleanly on:
 | Windows x86_64 | No caveats. `requirements-windows.lock` is a full pinned resolution. |
 | macOS x86_64 (Intel) | Works, but needs `requirements-intel-mac.override` — see below. |
 
-Windows users can install from the pinned lock file with PowerShell:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\pip.exe install -r requirements-windows.lock
-```
-
 ## Intel macOS
 
 Recent releases of several compiled dependencies no longer ship x86_64 macOS

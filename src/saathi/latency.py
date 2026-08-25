@@ -51,8 +51,9 @@ class LatencyRecorder:
     session ends, whichever comes first).
     """
 
-    def __init__(self, session_id: str, log_dir: Path):
+    def __init__(self, session_id: str, log_dir: Path, store=None):
         self.session_id = session_id
+        self._store = store
         self.path = log_dir / f"latency-{session_id}.jsonl"
         self._turn_index = 0
         self._buffer: dict[str, Any] = {}
@@ -144,6 +145,10 @@ class LatencyRecorder:
                 handle.write(json.dumps(record) + "\n")
         except OSError as exc:
             logger.warning(f"Could not append latency record: {exc}")
+        if self._store is not None:
+            self._store.log_latency(
+                self.session_id, self._turn_index, v2v, record.get("stages") or []
+            )
 
         if isinstance(v2v, (int, float)):
             slowest = max(

@@ -1,10 +1,10 @@
 {
-  "_comment": "Saathi crisis-handoff directory. VERIFY every number before launch day. Region selected by config; IN is default.",
+  "_comment": "Saathi crisis-handoff directory. Region selected by config; IN is default. IN numbers web-verified against official sources (telemanas.mohfw.gov.in, aasra.info) on 2026-08-25. PHONE verification still required before any public launch — a stale number here is the worst possible bug.",
   "IN": [
     {
       "name": "Tele-MANAS (Govt of India, 24x7)",
       "phone": "14416",
-      "alt": "1-800-891-4416"
+      "alt": "1800-89-14416"
     },
     {
       "name": "AASRA (24x7)",
