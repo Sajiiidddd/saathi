@@ -34,6 +34,9 @@
     --gold: #A8802A; --iris: #5A6BB0;
   }
   * { box-sizing: border-box; margin: 0; }
+  /* the hidden attribute must always win — author display: rules otherwise
+     override the browser's [hidden] default and elements refuse to hide */
+  [hidden] { display: none !important; }
   body {
     background: var(--bg); color: var(--ink); min-height: 100vh;
     font: 15px/1.55 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
@@ -241,6 +244,10 @@ offline eval harness; audio is never recorded.</p>
     <span class="kicker">admin access</span>
     <p id="lock-prompt">Type the password.</p>
     <form id="lock-form" style="display:flex; flex-direction:column; gap:.8rem;">
+      <!-- hidden username: lets password managers label this credential -->
+      <input type="text" name="username" value="saathi-admin" autocomplete="username"
+             readonly tabindex="-1" aria-hidden="true"
+             style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;" />
       <input id="lock-token" type="password" placeholder="password"
              autocomplete="current-password" />
       <button id="lock-go" type="submit">unlock</button>
@@ -274,8 +281,18 @@ function authHeaders() {
 }
 async function fetchJSON(url) {
   let r;
-  try { r = await fetch(url, { headers: authHeaders() }); }
-  catch (e) { netNote('can’t reach the server — retrying…'); throw e; }
+  // Hard timeout: a wrapped/broken fetch (extensions do this) can otherwise
+  // hang forever, freezing the UI on whatever it last said.
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), 12000);
+  try { r = await fetch(url, { headers: authHeaders(), signal: abort.signal }); }
+  catch (e) {
+    netNote(e.name === 'AbortError'
+      ? 'request stalled — a browser extension may be interfering; try incognito'
+      : 'can’t reach the server — retrying…');
+    throw e;
+  }
+  finally { clearTimeout(timer); }
   if (r.status === 401 || r.status === 429) {
     let detail = null;
     try { detail = (await r.json()).detail; } catch (e) {}
@@ -338,6 +355,10 @@ function showLock(status, detail) {
   if (hadPassword && left != null && left < 5) {
     msg.textContent = ROASTS[Math.min(4 - left, ROASTS.length - 1)] +
       ' (' + left + (left === 1 ? ' try' : ' tries') + ' left)';
+    msg.hidden = false;
+  } else if (hadPassword) {
+    // 401 without attempt detail — never strand the UI on "checking…"
+    msg.textContent = 'That didn’t go through. Try again.';
     msg.hidden = false;
   }
   // no password sent (bare poll): leave whatever message is showing

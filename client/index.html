@@ -63,6 +63,9 @@
                 border-color .35s var(--ease) !important;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; }
+  /* the hidden attribute must always win — author display: rules otherwise
+     override the browser's [hidden] default and elements refuse to hide */
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     background: var(--bg); color: var(--ink);
